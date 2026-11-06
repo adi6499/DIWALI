@@ -1,0 +1,166 @@
+// World VII: greeting editor. Live card preview, PNG download, native share
+// (with the image when the device supports it) and a personal link that
+// opens Deepotsav with a diya waiting to be lit for the recipient.
+import { PRESETS, presetById } from '../greetings/presets.js';
+import { drawCard, ensureFonts } from '../greetings/card.js';
+import { greetingUrl } from '../greetings/link.js';
+import { rovingGroup, setChecked } from '../core/a11y.js';
+import { canvasToBlob, downloadBlob, shareContent, copyText, sleep } from '../core/ui.js';
+import { readJSON, writeJSON } from '../core/storage.js';
+import { STORAGE_KEYS, festivalToday } from '../config.js';
+
+export function createGreetingsWorld(ctx) {
+  const el = document.getElementById('world-greetings');
+  const canvas = document.getElementById('card-canvas');
+  const to = document.getElementById('g-to');
+  const from = document.getElementById('g-from');
+  const lang = document.getElementById('g-lang');
+  const msg = document.getElementById('g-msg');
+  const styleGroup = document.getElementById('g-style');
+  const accentGroup = document.getElementById('g-accent');
+
+  const saved = readJSON(STORAGE_KEYS.greeting, {}) || {};
+  const g = {
+    to: saved.to || '', from: saved.from || '', lang: saved.lang || (festivalToday()?.tab === 'dhanteras' ? 'dhanteras' : 'hi'),
+    message: saved.message ?? '', style: saved.style || 'courtyard', accent: saved.accent || 'gold',
+    customMessage: !!saved.customMessage,
+  };
+  let background = null;
+  let timer = 0;
+
+  for (const p of PRESETS) {
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = p.label;
+    lang.append(o);
+  }
+
+  function syncForm() {
+    to.value = g.to;
+    from.value = g.from;
+    lang.value = presetById(g.lang).id;
+    msg.value = g.customMessage ? g.message : presetById(g.lang).message;
+    setChecked(styleGroup, '[data-style]', styleGroup.querySelector(`[data-style="${g.style}"]`) || styleGroup.firstElementChild);
+    setChecked(accentGroup, '[data-accent]', accentGroup.querySelector(`[data-accent="${g.accent}"]`) || accentGroup.firstElementChild);
+  }
+
+  function data() {
+    return { to: g.to.trim(), from: g.from.trim(), message: msg.value.trim(), lang: g.lang, style: g.style, accent: g.accent };
+  }
+
+  function render() {
+    const rangoli = ctx.rangoliImage?.() || null;
+    drawCard(canvas, data(), { background, rangoli });
+    const p = presetById(g.lang);
+    canvas.setAttribute('aria-label', `Greeting card preview: ${p.headline}. ${g.to ? `Dear ${g.to}. ` : ''}${msg.value}${g.from ? ` From ${g.from}.` : ''}`);
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      render();
+      writeJSON(STORAGE_KEYS.greeting, { to: g.to, from: g.from, lang: g.lang, message: msg.value, style: g.style, accent: g.accent, customMessage: g.customMessage });
+    }, 120);
+  }
+
+  to.addEventListener('input', () => { g.to = to.value; schedule(); });
+  from.addEventListener('input', () => { g.from = from.value; schedule(); });
+  msg.addEventListener('input', () => { g.customMessage = true; g.message = msg.value; schedule(); });
+  lang.addEventListener('change', () => {
+    g.lang = lang.value;
+    if (!g.customMessage) msg.value = presetById(g.lang).message;
+    schedule();
+  });
+  rovingGroup(styleGroup, '[data-style]', async (b) => {
+    setChecked(styleGroup, '[data-style]', b);
+    g.style = b.dataset.style;
+    if (g.style === 'courtyard' && !background) await captureBackground();
+    schedule();
+  });
+  rovingGroup(accentGroup, '[data-accent]', (b) => {
+    setChecked(accentGroup, '[data-accent]', b);
+    g.accent = b.dataset.accent;
+    schedule();
+  });
+
+  /** Grab a frame of the 3D courtyard to use behind the card. */
+  async function captureBackground() {
+    if (!ctx.gl) return;
+    try {
+      ctx.setShift('none');
+      await sleep(ctx.reduced ? 50 : 600);
+      background = ctx.engine.capture(1080, 1350);
+    } catch (err) {
+      console.warn('[greetings] capture failed', err);
+      background = null;
+    } finally {
+      ctx.setShift('none');
+    }
+  }
+
+  async function cardBlob() {
+    render();
+    return canvasToBlob(canvas, 'image/png');
+  }
+
+  document.getElementById('g-download').addEventListener('click', async () => {
+    try {
+      downloadBlob(await cardBlob(), 'deepotsav-greeting.png');
+      ctx.toast('Card saved as deepotsav-greeting.png');
+    } catch (err) {
+      console.error(err);
+      ctx.toast('Sorry, the card could not be saved.');
+    }
+  });
+
+  document.getElementById('g-share').addEventListener('click', async () => {
+    const d = data();
+    const url = greetingUrl(d);
+    let file = null;
+    try { file = new File([await cardBlob()], 'deepotsav-greeting.png', { type: 'image/png' }); } catch { file = null; }
+    const p = presetById(d.lang);
+    const text = `${p.headline}${d.to ? `, ${d.to}` : ''}! A diya is waiting for you to light.`;
+    const r = await shareContent({ title: p.headline, text, url, file });
+    if (r === 'copied') ctx.toast('Sharing isn’t available here, so the link was copied instead.');
+    else if (r === 'unsupported') ctx.toast('Sharing isn’t available on this device. Try Download or Copy link.');
+    if (r === 'shared' && file) {
+      // Some share targets drop the URL when a file is attached; offer the link too.
+      ctx.toast('Shared. You can also copy the personal link.', { action: { label: 'Copy link', onClick: () => copyText(url).then(() => ctx.toast('Link copied.')) } });
+    }
+  });
+
+  document.getElementById('g-link').addEventListener('click', async () => {
+    const ok = await copyText(greetingUrl(data()));
+    ctx.toast(ok ? 'Personal link copied. Paste it into any message.' : 'Could not copy the link.');
+  });
+
+  syncForm();
+
+  return {
+    id: 'greetings',
+    el,
+    heading: document.getElementById('greetings-title'),
+    /** Pre-fill a reply to a greeting the visitor received. */
+    prefillReply(received) {
+      if (!received) return;
+      g.to = received.from || '';
+      g.from = received.to || '';
+      g.lang = received.lang || g.lang;
+      g.customMessage = false;
+      syncForm();
+    },
+    async enter() {
+      await ctx.showScene('palace');
+      ctx.ensureLit(true);
+      await ensureFonts();
+      if (ctx.gl) {
+        ctx.palace.setMood('none');
+        await ctx.palace.rig.goTo(ctx.palace.shots.greeting, { duration: 2.6 });
+        if (g.style === 'courtyard') await captureBackground();
+      }
+      ctx.setShift('none');
+      render();
+    },
+    exit() {},
+  };
+}

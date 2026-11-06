@@ -1,0 +1,27 @@
+{
+  "name": "Deepotsav — A Festival of Light",
+  "short_name": "Deepotsav",
+  "description": "An immersive 3D Diwali: light a diya, walk the Ramayana homecoming, learn the traditions, draw rangoli, float wishes, paint the sky and send greetings.",
+  "id": "./",
+  "start_url": "./#/ignite",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#05071a",
+  "theme_color": "#070a1f",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["entertainment", "lifestyle", "education"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Rangoli studio", "url": "./#/rangoli", "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Fireworks", "url": "./#/fireworks", "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Send a greeting", "url": "./#/greetings", "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline · Deepotsav</title>
+  <meta name="theme-color" content="#070a1f">
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #05071a; color: #f4ecdb; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; text-align: center; padding: 24px; box-sizing: border-box; }
+    .flame { width: 14px; height: 28px; margin: 0 auto 6px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: radial-gradient(ellipse at 50% 70%, #fff6d8 0 25%, #ffc35a 45%, #ff7a1a 70%, transparent 72%); }
+    .bowl { width: 56px; height: 14px; margin: 0 auto 22px; background: #8a4524; border-radius: 4px 4px 40px 40px / 4px 4px 22px 22px; }
+    h1 { font-family: Georgia, serif; font-weight: 500; font-size: 30px; margin: 0 0 8px; }
+    p { color: rgba(244,236,219,0.75); max-width: 30em; margin: 0 auto 18px; line-height: 1.5; }
+    button { min-height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: #d6ae5e; color: #140f05; font-weight: 600; font-size: 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="flame" aria-hidden="true"></div>
+    <div class="bowl" aria-hidden="true"></div>
+    <h1>You’re offline</h1>
+    <p>Deepotsav could not reach the internet, and this part has not been saved on your device yet. The lamps will relight when you’re back online.</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+  </main>
+</body>
+</html>

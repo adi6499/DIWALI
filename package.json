@@ -1,0 +1,24 @@
+{
+  "name": "deepotsav",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DEEPOTSAV — an immersive, mobile-first 3D Diwali experience (vanilla JS + Three.js + GSAP + Web Audio).",
+  "type": "module",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "release": "node scripts/release.mjs",
+    "serve": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "devDependencies": {
+    "@fontsource/cormorant-garamond": "5.1.0",
+    "@fontsource/mukta": "5.1.0",
+    "gsap": "3.12.5",
+    "three": "0.170.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

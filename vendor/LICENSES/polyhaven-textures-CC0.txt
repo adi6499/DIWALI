@@ -1,0 +1,9 @@
+Textures in assets/textures are from Poly Haven and are public domain (CC0):
+
+red_sandstone_wall — Red Sandstone Wall by Amal Kumar (CC0) — https://polyhaven.com/a/red_sandstone_wall
+red_sandstone_pavement — Red Sandstone Pavement by Amal Kumar (CC0) — https://polyhaven.com/a/red_sandstone_pavement
+marble_01 — Marble 01 by Rob Tuytel (CC0) — https://polyhaven.com/a/marble_01
+granite_wall — Granite Wall by Dimitrios Savva (CC0) — https://polyhaven.com/a/granite_wall
+clay_plaster — Clay Plaster by Amal Kumar (CC0) — https://polyhaven.com/a/clay_plaster
+
+https://polyhaven.com/license

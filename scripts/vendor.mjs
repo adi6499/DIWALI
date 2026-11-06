@@ -35,6 +35,8 @@ const addons = [
   'postprocessing/Pass.js',
   'postprocessing/UnrealBloomPass.js',
   'postprocessing/OutputPass.js',
+  'postprocessing/SMAAPass.js',
+  'shaders/SMAAShader.js',
   'shaders/CopyShader.js',
   'shaders/LuminosityHighPassShader.js',
   'shaders/OutputShader.js',

@@ -17,9 +17,11 @@ import { CameraRig } from '../core/cameraRig.js';
 import { generateRangoli } from '../rangoli/generator.js';
 
 export const SHOTS = {
-  heroClose: { pos: [0.16, 1.24, 2.8], target: [0.02, 1.2, 2.35], fov: 30, aperture: 0.9, focus: 0.5 },
+  heroClose: { pos: [0.12, 1.305, 2.66], target: [0.018, 1.2, 2.35], fov: 30, fit: 0.26, aperture: 0.9, focus: 0.34 },
   heroMid: { pos: [0.55, 1.5, 4.0], target: [0, 0.9, 1.0], fov: 40, aperture: 0.45 },
   reveal: { pos: [0, 2.3, 13.4], target: [0, 2.8, -12], fov: 50, aperture: 0.04 },
+  about: { pos: [-1.2, 5.2, 15.8], target: [0, 2.6, -10], fov: 52, aperture: 0.02 },
+  aerial: { pos: [10, 48, 36], target: [0, 3, -5], fov: 56, aperture: 0 },
   story0: { pos: [-3.7, 1.55, 4.8], target: [0.6, 1.0, -4], fov: 48, aperture: 0.04 },
   story1: { pos: [-3.9, 1.85, -0.4], target: [1.0, 1.6, -9.5], fov: 48, aperture: 0.04 },
   story2: { pos: [-3.3, 2.4, -6.3], target: [0.4, 3.6, -18], fov: 50, aperture: 0.04 },
@@ -43,6 +45,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   const low = tier.name === 'low';
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x070a1e, 0.017);
+  scene.userData.prepass = true;
   const camera = new THREE.PerspectiveCamera(50, 1, 0.03, 1200);
   const rig = new CameraRig(camera);
   rig.set(SHOTS.heroClose);
@@ -89,12 +92,50 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     gold: mat({ color: 0xf4c35a, roughness: 0.38, metalness: 0.15, emissive: 0x3a2206 }),
   };
 
+  // Real stone, marble and clay (medium/high). Loaded in the background; the
+  // procedural textures above stay until they arrive, so nothing waits.
+  async function upgradeMaterials() {
+    try {
+      const [wall, floor, marble, granite, clay] = await Promise.all([
+        TX.loadPBR('wall', { aniso }), TX.loadPBR('floor', { aniso }), TX.loadPBR('marble', { aniso }),
+        TX.loadPBR('granite', { aniso }), TX.loadPBR('clay', { aniso, maps: ['normal', 'arm'] }),
+      ]);
+      const apply = (mat, set, { color, roughness = 1, normal = 1, ao = 0.85 }) => {
+        mat.map = set.color;
+        mat.normalMap = set.normal;
+        mat.normalScale.set(normal, normal);
+        mat.roughnessMap = set.arm;
+        mat.aoMap = set.arm;
+        mat.aoMapIntensity = ao;
+        mat.roughness = roughness;
+        mat.color.set(color);
+        mat.needsUpdate = true;
+      };
+      apply(materials.sandstone, wall, { color: 0xf4e3cc, normal: 1.1 });
+      apply(materials.floor, floor, { color: 0xeadccc, normal: 1.0 });
+      apply(materials.ivory, marble, { color: 0xfffaf2, roughness: 0.6, normal: 0.6, ao: 0.6 });
+      apply(materials.granite, granite, { color: 0xa79b90, normal: 1.0 });
+      materials.jaali.map = wall.color;
+      materials.jaali.normalMap = wall.normal;
+      materials.jaali.needsUpdate = true;
+      const bowl = hero.bowl.material;
+      clay.normal.repeat.set(3, 1);
+      bowl.normalMap = clay.normal;
+      bowl.normalScale.set(0.5, 0.5);
+      bowl.needsUpdate = true;
+    } catch (err) {
+      console.warn('[palace] real textures unavailable, keeping procedural ones', err);
+    }
+  }
+
   // --- fields & architecture ------------------------------------------------
   progress('Raising the palace…', 0.45);
   await tick();
   const P = LAYOUT.pool;
   const reflect = { y: P.waterY, bounds: [P.x0, P.x1, P.z0, P.z1] };
-  const lamps = new LampField({ groupU, capacity: 4200, reflect, maxCoc: tier.maxCoc, segments: low ? 7 : 10, flameH: 0.044 });
+  const lamps = new LampField({ groupU, capacity: 4200, reflect, maxCoc: tier.maxCoc, segments: low ? 7 : 10, flameH: 0.044, haloSize: 0.065 });
+  // Bloom already makes the glow; halos only add a soft core (stronger without bloom)
+  lamps.u.uHaloIntensity.value = tier.bloom ? 0.32 : 0.6;
   const decals = new DecalField({ groupU, capacity: 2400 });
   const cones = new ConeField(groupU);
   const built = buildPalace({ tier, materials, lamps, decals, cones, lights, groupU });
@@ -156,6 +197,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   }
   scene.add(gateSpot, gateSpot.target);
   lights.finalize(tier.name);
+  if (tier.realTextures && tier.material !== 'lambert') upgradeMaterials();
 
   // --- state -----------------------------------------------------------------
   const state = {
@@ -171,9 +213,9 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     name: 'palace',
     scene,
     camera,
-    exposure: 1.0,
-    vignette: 0.6,
-    bloom: { strength: 0.9, radius: 0.62, threshold: 0.82 },
+    exposure: 0.9,
+    vignette: 0.5,
+    bloom: { strength: 0.62, radius: 0.42, threshold: 0.95 },
     dof: () => ({ focus: rig.focus, aperture: rig.aperture }),
     resize: (w, h) => rig.resize(w, h),
     update,
@@ -186,7 +228,8 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     lamps.updateCamera(camera, pxH);
     lamps.setFocus(rig.focus, rig.aperture);
     hero.flame.updateCamera(camera, pxH);
-    hero.flame.setFocus(rig.focus, rig.aperture);
+    // the hero flame is always the subject in focus: a soft glow, never a bokeh disc
+    hero.flame.setFocus(rig.focus, 0);
     kandilHalos.updateCamera(camera, pxH);
 
     // hero floats in the air before ignition, then rides the water
@@ -206,7 +249,8 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     gateSpot.intensity = 520 * litAt(groupU, G.ARCADE, 23) * (0.95 + 0.05 * Math.sin(t * 5.3));
     let overall = 0;
     for (const g of [G.FLOOR, G.ARCADE, G.FACADE]) overall += litAt(groupU, g, 0) / 3;
-    hemi.intensity = 0.75 + overall * 2.0;
+    hemi.intensity = (0.75 + overall * 2.0) * (scene.environment ? 0.55 : 1);
+    env.tick(dt);
 
     if (state.fireworks) {
       state.fireworks.update(dt, t, camera);
@@ -292,6 +336,21 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     for (let g = 0; g < MAX_GROUPS; g++) tweenGain(groupU, g, m[g] ?? 1, rig.reduced ? 0.01 : 1.6);
   }
 
+  /** Scroll-driven: blend the light between two moods. */
+  function blendMood(a, b, t) {
+    const ma = MOODS[a] || {};
+    const mb = MOODS[b] || {};
+    for (let g = 0; g < MAX_GROUPS; g++) groupU.uGains.value[g] = (ma[g] ?? 1) + ((mb[g] ?? 1) - (ma[g] ?? 1)) * t;
+  }
+
+  /** Scroll-driven: how far the story has lit the pool, facade and domes. */
+  function setJourneyLight({ pool, facade, dome }) {
+    const w = groupU.uWaves.value;
+    w[G.POOL] = pool;
+    w[G.FACADE] = facade;
+    w[G.DOME] = dome;
+  }
+
   async function enableFireworks() {
     if (state.fireworks) return state.fireworks;
     const { Fireworks } = await import('../gfx/fireworks.js');
@@ -320,6 +379,65 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     return engine.project(v, camera);
   }
 
+  // --- environment light ---------------------------------------------------------
+  // A 360° snapshot of the courtyard as it is currently lit, turned into image
+  // based lighting. Marble, oil, bronze and gold then reflect the real lamps,
+  // and stone picks up warm bounce light. It is refreshed whenever the lamps
+  // have changed noticeably, and only while the scroll is still, so it never
+  // causes a hitch mid-flight.
+  const env = (() => {
+    if (tier.material === 'lambert') return { tick() {}, capture() {} };
+    const renderer = engine.renderer;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const cubeRT = new THREE.WebGLCubeRenderTarget(tier.name === 'high' ? 256 : 128, { type: THREE.HalfFloatType });
+    const cubeCam = new THREE.CubeCamera(0.3, 400, cubeRT);
+    cubeCam.position.set(0, 2.4, -1.5);
+    scene.add(cubeCam);
+    let current = null;
+    let lastSum = -1;
+    let cool = 2;
+    const intensity = { sandstone: 0.45, floor: 0.6, ivory: 0.9, granite: 0.5, bronze: 1.2, gold: 1.4, marigold: 0.35, clay: 0.4, jaali: 0.4, rangoli: 0.3, feet: 0.3 };
+    function capture() {
+      const camPos = sky.mesh.position.clone();
+      sky.mesh.position.copy(cubeCam.position);
+      const hidden = [hero.embers, kandilHalos.group];
+      hidden.forEach((o) => { o.visible = false; });
+      const ac = renderer.autoClear;
+      renderer.autoClear = true;
+      cubeCam.update(renderer, scene);
+      renderer.autoClear = ac;
+      hidden.forEach((o) => { o.visible = true; });
+      sky.mesh.position.copy(camPos);
+      const next = pmrem.fromCubemap(cubeRT.texture);
+      const firstTime = !current;
+      current?.dispose();
+      current = next;
+      scene.environment = next.texture;
+      if (firstTime) {
+        for (const [k, v] of Object.entries(intensity)) if (materials[k]) materials[k].envMapIntensity = v;
+        hero.bowl.material.envMapIntensity = 0.5;
+      }
+    }
+    return {
+      capture,
+      tick(dt) {
+        cool -= dt;
+        if (cool > 0 || !state.ignited) return;
+        const w = groupU.uWaves.value;
+        const g = groupU.uGains.value;
+        let sum = 0;
+        for (let i = 0; i < w.length; i++) sum += Math.min(w[i], 50) * g[i];
+        const director = engine._director;
+        const moving = director && Math.abs(window.scrollY - director.y) > 2;
+        if (Math.abs(sum - lastSum) > 2 && !moving) {
+          lastSum = sum;
+          cool = 1.2;
+          try { capture(); } catch (err) { console.warn('[palace] environment capture failed', err); cool = 30; }
+        }
+      },
+    };
+  })();
+
   progress('Lighting the first lamp…', 0.9);
   await tick();
   return {
@@ -335,6 +453,8 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     lightAll,
     storyChapter,
     setMood,
+    blendMood,
+    setJourneyLight,
     enableFireworks,
     setRangoli,
     hitWick,

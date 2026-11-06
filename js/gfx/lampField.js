@@ -202,14 +202,14 @@ void main() {
   x += (n - 0.5) * 0.18 * y;
 #endif
   float yy = clamp(y, 0.0, 1.0);
-  float prof = 0.6 * pow(yy + 0.03, 0.55) * pow(max(1.0 - yy, 0.0), 0.9) + 0.0001;
+  float prof = 0.7 * pow(yy + 0.03, 0.5) * pow(max(1.0 - yy, 0.0), 1.0) + 0.0001;
   float d = abs(x) / prof;
   float base = smoothstep(-0.2, 0.04, y);
   float body = (1.0 - smoothstep(0.5, 1.0, d)) * base * (1.0 - smoothstep(0.82, 1.0, y));
   float core = (1.0 - smoothstep(0.0, 0.6, d)) * smoothstep(0.02, 0.14, y) * (1.0 - smoothstep(0.32, 0.72, y));
-  vec3 cOuter = vec3(1.0, 0.32, 0.05);
-  vec3 cMid = vec3(1.0, 0.62, 0.2);
-  vec3 cCore = vec3(1.0, 0.93, 0.78);
+  vec3 cOuter = vec3(1.0, 0.3, 0.05);
+  vec3 cMid = vec3(1.0, 0.56, 0.16);
+  vec3 cCore = vec3(1.0, 0.82, 0.48);
   vec3 col = mix(cOuter, cMid, 1.0 - smoothstep(0.25, 0.95, d));
   col = mix(col, cCore, core);
   // cool blue root of the flame, just above the wick
@@ -227,7 +227,7 @@ void main() {
   a = mix(a, dotA, vTiny);
   col = mix(col, mix(cMid, cCore, 0.5), vTiny);
   float fog = 1.0 - fogAmount(vFog) * 0.85;
-  gl_FragColor = vec4(col * a * vLit * uIntensity * fog * (1.0 + core * 1.6), 1.0);
+  gl_FragColor = vec4(col * a * vLit * uIntensity * fog * (1.0 + core * 0.9), 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }
@@ -287,8 +287,10 @@ void main() {
   if (vA < 0.002) discard;
   float r = length(vUv);
   if (r > 1.0) discard;
-  float gauss = exp(-r * r * 5.0) + exp(-r * r * 26.0) * 0.8;
-  float disc = (1.0 - smoothstep(0.86, 1.0, r)) * (0.55 + 0.45 * smoothstep(0.55, 0.96, r));
+  // fades fully to zero before the edge of the quad, so no ring can show
+  float fade = 1.0 - smoothstep(0.45, 1.0, r);
+  float gauss = (exp(-r * r * 8.0) + exp(-r * r * 30.0) * 0.8) * fade;
+  float disc = (1.0 - smoothstep(0.8, 1.0, r)) * (0.6 + 0.4 * smoothstep(0.5, 0.95, r));
   float a = mix(gauss, disc * 0.65, vBokeh);
   float fog = 1.0 - fogAmount(vFog) * 0.7;
   gl_FragColor = vec4(uHaloColor * a * vA * uHaloIntensity * fog, 1.0);

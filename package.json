@@ -7,6 +7,7 @@
   "scripts": {
     "vendor": "node scripts/vendor.mjs",
     "icons": "node scripts/make-icons.mjs",
+    "textures": "node scripts/textures.mjs",
     "release": "node scripts/release.mjs",
     "serve": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
@@ -16,6 +17,7 @@
     "@fontsource/cormorant-garamond": "5.1.0",
     "@fontsource/mukta": "5.1.0",
     "gsap": "3.12.5",
+    "sharp": "^0.33.5",
     "three": "0.170.0"
   },
   "engines": {

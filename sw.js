@@ -9,7 +9,7 @@
  */
 
 /* RELEASE:START */
-const VERSION = 'deepotsav-1.0.0-ceb78b084e';
+const VERSION = 'deepotsav-1.0.0-de8757685b';
 const PRECACHE = [
   './',
   './assets/fonts/cormorant-500-italic.woff2',
@@ -38,6 +38,7 @@ const PRECACHE = [
   './js/core/pwa.js',
   './js/core/quality.js',
   './js/core/router.js',
+  './js/core/scrollDirector.js',
   './js/core/storage.js',
   './js/core/store.js',
   './js/core/ui.js',
@@ -65,9 +66,7 @@ const PRECACHE = [
   './js/worlds/fireworks.js',
   './js/worlds/greetings.js',
   './js/worlds/ignite.js',
-  './js/worlds/meaning.js',
   './js/worlds/rangoli.js',
-  './js/worlds/story.js',
   './js/worlds/wishes.js',
   './manifest.webmanifest',
   './offline.html',
@@ -78,11 +77,13 @@ const PRECACHE = [
   './vendor/three/addons/postprocessing/OutputPass.js',
   './vendor/three/addons/postprocessing/Pass.js',
   './vendor/three/addons/postprocessing/RenderPass.js',
+  './vendor/three/addons/postprocessing/SMAAPass.js',
   './vendor/three/addons/postprocessing/ShaderPass.js',
   './vendor/three/addons/postprocessing/UnrealBloomPass.js',
   './vendor/three/addons/shaders/CopyShader.js',
   './vendor/three/addons/shaders/LuminosityHighPassShader.js',
   './vendor/three/addons/shaders/OutputShader.js',
+  './vendor/three/addons/shaders/SMAAShader.js',
   './vendor/three/addons/utils/BufferGeometryUtils.js',
   './vendor/three/three.module.min.js',
 ];

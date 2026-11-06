@@ -1,33 +1,31 @@
-// World IV: the rangoli studio. Your design is laid onto the courtyard floor
-// (live, a moment after each stroke) and can be downloaded as a PNG or used
-// on a greeting card.
+// IV. Rangoli. The design on the courtyard floor is shown as you scroll past;
+// "Draw your rangoli" opens the studio over the journey. Every stroke is laid
+// onto the 3D floor a moment later; the design can be downloaded as a PNG.
 import { POWDERS } from '../rangoli/generator.js';
 import { createStudio } from '../rangoli/studio.js';
 import { setChecked, rovingGroup } from '../core/a11y.js';
 import { canvasToBlob, downloadBlob } from '../core/ui.js';
 
 export function createRangoliWorld(ctx) {
-  const el = document.getElementById('world-rangoli');
+  const el = document.getElementById('rangoli');
+  const overlay = document.getElementById('studio-overlay');
   const canvas = document.getElementById('rangoli-canvas');
-  const studioEl = document.getElementById('studio');
-  const viewPanel = document.getElementById('courtyard-view');
   const swatches = document.getElementById('swatches');
   const toolGroup = document.getElementById('tool-group');
   const sizeRange = document.getElementById('size-range');
+  const openBtn = document.getElementById('open-studio');
   let studio = null;
-  let viewing = false;
+  let restoring = null;
 
   function init() {
-    if (studio) return;
+    if (studio) return restoring;
     const size = Math.min(window.innerWidth, window.innerHeight) < 500 || ctx.tier.name === 'low' ? 768 : 1024;
     studio = createStudio({
       canvas,
       cursorEl: document.getElementById('brush-cursor'),
       size,
       announce: ctx.announce,
-      onChange: (ink) => {
-        if (ctx.gl) ctx.palace.setRangoli(ink);
-      },
+      onChange: (ink) => { if (ctx.gl) ctx.palace.setRangoli(ink); },
     });
     studio.onSizeChange = (v) => { sizeRange.value = String(v); };
 
@@ -76,55 +74,60 @@ export function createRangoliWorld(ctx) {
         ctx.toast('Sorry, the image could not be saved.');
       }
     });
-    document.getElementById('r-view').addEventListener('click', () => setViewing(true));
-    document.getElementById('r-back').addEventListener('click', () => setViewing(false));
+    document.getElementById('studio-close').addEventListener('click', close);
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      if (e.key === 'Tab') trapFocus(e);
+    });
 
     // Continue a previous design, or start with a generated one
-    studio.restore().then((restored) => {
-      // Start with a generated design, unless the visitor has already begun drawing
+    restoring = studio.restore().then((restored) => {
       if (!restored && !studio.canUndo) studio.inspire();
       const floor = studio.state.floor;
       const sel = document.getElementById('floor-select');
       if ([...sel.options].some((o) => o.value === floor)) sel.value = floor;
       canvas.style.background = floor;
     });
+    return restoring;
   }
 
-  function setViewing(on) {
-    viewing = on;
-    studioEl.hidden = on;
-    viewPanel.hidden = !on;
-    if (ctx.gl) {
-      ctx.engine.maxFps = on ? 0 : 30;
-      ctx.palace.rig.goTo(on ? ctx.palace.shots.rangoliView : ctx.palace.shots.rangoliTop, { duration: 2.4 });
-      ctx.setShift(on ? 'panel' : 'none');
-    }
-    (on ? document.getElementById('r-back') : document.getElementById('r-view')).focus({ preventScroll: true });
-    if (on && !ctx.gl) ctx.toast('The 3D courtyard is not available on this device, but your design is saved.');
+  function trapFocus(e) {
+    const items = [...overlay.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((x) => !x.disabled && x.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
+
+  async function open() {
+    init();
+    overlay.hidden = false;
+    document.documentElement.classList.add('studio-open');
+    if (ctx.gl) ctx.engine.maxFps = 30;
+    document.getElementById('rangoli-title').focus({ preventScroll: true });
+    studio.render();
+    ctx.announce('Rangoli studio open. Escape closes it.');
+  }
+
+  function close() {
+    overlay.hidden = true;
+    document.documentElement.classList.remove('studio-open');
+    if (ctx.gl) ctx.engine.maxFps = 0;
+    openBtn.focus({ preventScroll: true });
+    ctx.announce('Your rangoli is on the courtyard floor.');
+  }
+
+  openBtn.addEventListener('click', open);
 
   return {
     id: 'rangoli',
     el,
-    heading: document.getElementById('rangoli-title'),
     /** For greeting cards. */
     exportImage: () => (studio ? studio.exportCanvas({ floor: true, out: 720 }) : null),
-    async enter() {
-      await ctx.showScene('palace');
-      ctx.ensureLit(true);
-      init();
-      setViewing(false);
-      if (ctx.gl) {
-        ctx.palace.setMood('none');
-        ctx.palace.rig.goTo(ctx.palace.shots.rangoliTop, { duration: 2.6 });
-        // The courtyard barely moves while you draw: render at 30 fps to save battery.
-        ctx.engine.maxFps = 30;
-      }
-      ctx.setShift('none');
-    },
-    exit() {
-      if (ctx.gl) ctx.engine.maxFps = 0;
-      if (viewing) { studioEl.hidden = false; viewPanel.hidden = true; viewing = false; }
-    },
+    /** Load the saved design onto the floor without opening the studio. */
+    preload: () => init(),
+    enter() { init(); },
+    exit() {},
   };
 }

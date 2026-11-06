@@ -1,7 +1,8 @@
-// World VI: fireworks of light over the palace. Tap the sky to launch the
-// chosen shell, drop an anar or chakri on the courtyard floor, or write with
-// a phuljhadi sparkler. Launches are limited to three a second so the sky
-// never strobes; reduced motion softens the flashes further.
+// V. Fireworks of light over the palace. While this part of the journey is
+// on screen a gentle show plays by itself; tap the sky to launch the chosen
+// shell, drop an anar or chakri on the courtyard floor, or choose the sparkler
+// and drag to write with light. Launches are limited to three a second so the
+// sky never strobes; reduced motion softens the flashes further.
 import * as THREE from '../lib/three.js';
 import { rovingGroup, setChecked } from '../core/a11y.js';
 
@@ -9,15 +10,19 @@ const LABELS = {
   peony: 'Peony', chrysanthemum: 'Chrysanthemum', willow: 'Golden willow', lotus: 'Lotus', ring: 'Ring',
   palm: 'Palm', crossette: 'Crossette', anar: 'Anar fountain', chakri: 'Chakri', sparkler: 'Sparkler',
 };
+const SHOW = ['peony', 'willow', 'lotus', 'chrysanthemum', 'ring', 'palm', 'crossette'];
 
 export function createFireworksWorld(ctx) {
-  const el = document.getElementById('world-fireworks');
+  const el = document.getElementById('fireworks');
   const group = document.getElementById('fw-types');
   const finaleBtn = document.getElementById('fw-finale');
+  const stage = document.getElementById(ctx.gl ? 'stage' : 'fallback-stage');
   let type = 'peony';
   let fw = null;
-  let sparkling = null; // { x, y } screen
+  let sparkling = null;
   let unsubscribe = null;
+  let showTimer = 0;
+  let active = false;
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const skyPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 38);
@@ -27,7 +32,9 @@ export function createFireworksWorld(ctx) {
   rovingGroup(group, '[data-fw]', (b) => {
     setChecked(group, '[data-fw]', b);
     type = b.dataset.fw;
-    ctx.announce(`${LABELS[type]} selected.`);
+    // The sparkler needs dragging on the sky, so the sky stops scrolling the page
+    stage.classList.toggle('is-drawing', type === 'sparkler' && active);
+    ctx.announce(type === 'sparkler' ? 'Sparkler: drag across the sky to write with light. Scroll using the card.' : `${LABELS[type]} selected. Tap the sky to launch.`);
   });
   setChecked(group, '[data-fw]', group.querySelector('[aria-checked="true"]'));
 
@@ -38,9 +45,9 @@ export function createFireworksWorld(ctx) {
     return ray;
   }
 
-  function targetFor(x, y) {
+  function targetFor(kind, x, y) {
     const r = rayFrom(x, y);
-    if (type === 'anar' || type === 'chakri') {
+    if (kind === 'anar' || kind === 'chakri') {
       if (r.ray.intersectPlane(floorPlane, hit) && Math.abs(hit.x) < 10 && hit.z > -19 && hit.z < 13 && !(Math.abs(hit.x) < 3 && hit.z < 1.5 && hit.z > -12.5)) {
         return hit.clone();
       }
@@ -52,27 +59,29 @@ export function createFireworksWorld(ctx) {
     return hit.clone();
   }
 
-  function launchAt(x, y) {
-    if (!ctx.gl) { ctx.fallback.launch(x, y); ctx.audio.launch(0); setTimeout(() => ctx.audio.burst({ distance: 60 }), 1200); return; }
-    if (!fw) return;
-    if (!fw.canLaunch() && type !== 'anar' && type !== 'chakri') return;
-    fw.launch(type, targetFor(x, y));
-    ctx.announce(`${LABELS[type]} launched.`);
-  }
-
-  function randomLaunch() {
-    const w = ctx.gl ? ctx.engine.width : window.innerWidth;
-    const h = ctx.gl ? ctx.engine.height : window.innerHeight;
-    const x = w * (0.2 + Math.random() * 0.6);
-    const y = h * (0.12 + Math.random() * 0.25);
-    if (type === 'sparkler') {
-      ctx.toast('Drag across the sky to write with the sparkler.');
+  function launchAt(x, y, kind = type) {
+    if (!ctx.gl) {
+      ctx.fallback.launch(x, y);
+      ctx.audio.launch(0);
+      setTimeout(() => ctx.audio.burst({ distance: 60 }), 1200);
       return;
     }
-    launchAt(x, type === 'anar' || type === 'chakri' ? h * 0.8 : y);
+    if (!fw) return;
+    if (!fw.canLaunch() && kind !== 'anar' && kind !== 'chakri') return;
+    fw.launch(kind, targetFor(kind, x, y));
   }
 
-  document.getElementById('fw-launch').addEventListener('click', randomLaunch);
+  function randomLaunch(kind = type) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    launchAt(w * (0.2 + Math.random() * 0.6), kind === 'anar' || kind === 'chakri' ? h * 0.8 : h * (0.1 + Math.random() * 0.22), kind);
+  }
+
+  document.getElementById('fw-launch').addEventListener('click', () => {
+    if (type === 'sparkler') { ctx.toast('Drag across the sky to write with the sparkler.'); return; }
+    randomLaunch();
+    ctx.announce(`${LABELS[type]} launched.`);
+  });
   finaleBtn.addEventListener('click', () => {
     if (ctx.gl) fw?.finale(); else ctx.fallback.finale();
     finaleBtn.disabled = true;
@@ -80,11 +89,22 @@ export function createFireworksWorld(ctx) {
     setTimeout(() => { finaleBtn.disabled = false; }, 9000);
   });
 
+  // A gentle show while the section is in view
+  function scheduleShow() {
+    clearTimeout(showTimer);
+    if (!active) return;
+    const wait = (ctx.reduced ? 5200 : 2400) + Math.random() * 1600;
+    showTimer = setTimeout(() => {
+      const near = Math.abs(ctx.director.f - ctx.director.firstOfGroup('fireworks')) < 0.45;
+      if (near && !document.hidden && (!fw || fw.canLaunch())) randomLaunch(SHOW[Math.floor(Math.random() * SHOW.length)]);
+      scheduleShow();
+    }, wait);
+  }
+
   function sparkleFrame(dt) {
     if (!sparkling || !fw) return;
     const r = rayFrom(sparkling.x, sparkling.y);
-    const p = r.ray.origin.clone().addScaledVector(r.ray.direction, 6);
-    fw.sparkle(p, dt);
+    fw.sparkle(r.ray.origin.clone().addScaledVector(r.ray.direction, 6), dt);
   }
 
   function hookSound(f) {
@@ -100,41 +120,34 @@ export function createFireworksWorld(ctx) {
   return {
     id: 'fireworks',
     el,
-    heading: document.getElementById('fireworks-title'),
     async enter() {
-      await ctx.showScene('palace');
-      ctx.ensureLit(true);
-      ctx.audio.setScene('fireworks');
+      active = true;
       if (ctx.gl) {
-        ctx.palace.setMood('none');
-        ctx.palace.rig.goTo(ctx.palace.shots.fireworks, { duration: 3 });
         fw = await ctx.palace.enableFireworks();
         fw.reduced = ctx.reduced;
         hookSound(fw);
-        unsubscribe = ctx.onFrame(sparkleFrame);
-        // A welcome shell so the sky is never empty
-        setTimeout(() => { if (ctx.current === 'fireworks' && fw.canLaunch()) fw.launch('willow', new THREE.Vector3(-6, 24, -38)); }, 1600);
-      } else {
-        ctx.fallback.setMode('fireworks');
-        ctx.fallback.lightAll();
+        if (!unsubscribe) unsubscribe = ctx.onFrame(sparkleFrame);
       }
-      ctx.setShift('panel');
+      stage.classList.toggle('is-drawing', type === 'sparkler');
+      scheduleShow();
     },
     exit() {
+      active = false;
+      clearTimeout(showTimer);
       unsubscribe?.();
       unsubscribe = null;
       sparkling = null;
+      stage.classList.remove('is-drawing');
       if (!ctx.gl) ctx.fallback.sparkle(null);
-      ctx.audio.setScene('palace');
+    },
+    onTap(e, x, y) {
+      if (type !== 'sparkler') launchAt(x, y);
     },
     onPointerDown(e, x, y) {
-      if (type === 'sparkler') {
-        sparkling = { x, y };
-        if (!ctx.gl) ctx.fallback.sparkle(x, y);
-        ctx.audio.hiss(1.2, 0, 0.03);
-        return;
-      }
-      launchAt(x, y);
+      if (type !== 'sparkler') return;
+      sparkling = { x, y };
+      if (!ctx.gl) ctx.fallback.sparkle(x, y);
+      ctx.audio.hiss(1.2, 0, 0.03);
     },
     onPointerMove(e, x, y) {
       if (!sparkling) return;

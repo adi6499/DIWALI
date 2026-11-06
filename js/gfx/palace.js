@@ -312,11 +312,11 @@ export function buildPalace({ tier, materials, lamps, decals, cones, lights, gro
         const key = base + i * 0.75 + (j / n) * 0.75;
         addLamp(tx + Math.cos(a) * (r - 0.05), y + 0.03, tz + Math.sin(a) * (r - 0.05), G.TOWER, key, 0.95);
       }
-      decals.add({ pos: [tx, y + 0.031, tz], radius: r * 1.05, intensity: 0.5, group: G.TOWER, key: base + i * 0.75 + 0.4 });
+      decals.add({ pos: [tx, y + 0.031, tz], radius: r * 1.05, intensity: 0.28, group: G.TOWER, key: base + i * 0.75 + 0.4 });
     }
     // finial lamp
     addLamp(tx, 5.3, tz, G.TOWER, base + tiers * 0.75, 1.5);
-    lights.add({ pos: [tx, 2.6, tz], intensity: 2.4, radius: 9, group: G.TOWER, key: base + 2.5, priority: 1 });
+    lights.add({ pos: [tx, 2.6, tz], intensity: 1.7, radius: 9, group: G.TOWER, key: base + 2.5, priority: 1 });
   }
   lights.add({ pos: [0, 2.6, 2.3], intensity: 3.0, radius: 12, group: G.TOWER, key: 8, only: 'low' });
 
@@ -502,7 +502,7 @@ export function buildPalace({ tier, materials, lamps, decals, cones, lights, gro
         add('sandstone', box(0.3, H1, 8.6), M(x - 2.4, H1 / 2, -4.7));
         add('sandstone', box(0.3, H1, 8.6), M(x + 2.4, H1 / 2, -4.7));
         add('sandstone', box(5.1, 0.3, 8.6), M(x, H1, -4.7));
-        const doorGlow = glowAttrs(new THREE.PlaneGeometry(3.0, 4.6).toNonIndexed(), { group: G.ARCADE, key: 24, bright: 0.25, color: [1.0, 0.45, 0.16] });
+        const doorGlow = glowAttrs(new THREE.PlaneGeometry(3.0, 4.6).toNonIndexed(), { group: G.ARCADE, key: 24, bright: 0.1, color: [1.0, 0.42, 0.14] });
         add('glow', doorGlow, M(x, 2.4, -8.85));
       } else {
         const gw = toWorld(x, 2, -3);
@@ -722,6 +722,7 @@ export function buildPalace({ tier, materials, lamps, decals, cones, lights, gro
     m.castShadow = cast && tier.shadows;
     m.receiveShadow = receive && tier.shadows;
     m.name = key;
+    if (key !== 'jaali' && key !== 'glow') m.layers.enable(1);
     group.add(m);
     return m;
   };
@@ -749,6 +750,7 @@ export function buildPalace({ tier, materials, lamps, decals, cones, lights, gro
     flowers.forEach((f, i) => { garlands.setMatrixAt(i, f.m); garlands.setColorAt(i, f.c); });
     garlands.instanceMatrix.needsUpdate = true;
     garlands.castShadow = false;
+    garlands.layers.enable(1);
     group.add(garlands);
   }
 
@@ -785,6 +787,7 @@ export function buildPalace({ tier, materials, lamps, decals, cones, lights, gro
   const coinMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.024, 0.024, 0.005, 14), materials.gold, coins.length);
   coins.forEach((m, i) => coinMesh.setMatrixAt(i, m));
   coinMesh.instanceMatrix.needsUpdate = true;
+  coinMesh.layers.enable(1);
   group.add(coinMesh);
 
   return {

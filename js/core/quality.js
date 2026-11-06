@@ -54,7 +54,7 @@ export function resolveTier(setting, probed) {
  * onDegrade() when even the lowest resolution is too slow.
  */
 export class AdaptiveMonitor {
-  constructor({ onScale, onDegrade, minScale = 0.6 }) {
+  constructor({ onScale, onDegrade, minScale = 0.8 }) {
     this.onScale = onScale;
     this.onDegrade = onDegrade;
     this.minScale = minScale;
@@ -84,7 +84,7 @@ export class AdaptiveMonitor {
 
     if (median > 1 / 40) {
       if (this.scale > this.minScale + 0.01) {
-        this.scale = Math.max(this.minScale, this.scale - 0.15);
+        this.scale = Math.max(this.minScale, this.scale - 0.1);
         this.onScale(this.scale);
         this.cooldown = 1;
       } else if (!this.degraded) {

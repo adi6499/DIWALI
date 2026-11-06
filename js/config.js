@@ -8,9 +8,9 @@ export const WORLDS = [
   { id: 'story', title: 'The way home', scene: 'palace' },
   { id: 'meaning', title: 'What Diwali means', scene: 'palace' },
   { id: 'rangoli', title: 'Rangoli studio', scene: 'palace' },
-  { id: 'wishes', title: 'Ocean of wishes', scene: 'river' },
   { id: 'fireworks', title: 'Fireworks of light', scene: 'palace' },
-  { id: 'greetings', title: 'Greetings', scene: 'palace' },
+  { id: 'wishes', title: 'Ocean of wishes', scene: 'river' },
+  { id: 'greetings', title: 'Greetings', scene: 'river' },
 ];
 
 /**
@@ -27,19 +27,19 @@ export const TIERS = {
     name: 'low', pixelRatio: 1, post: false, bloom: false, dof: false, msaa: 0,
     shadows: false, shadowSize: 0, reflections: false, lampDensity: 0.45, lampLights: 6,
     riverLamps: 450, skylineLamps: 260, fwParticles: 6000, fwTrail: 1, garlands: 0.35,
-    material: 'lambert', archDetail: 10, maxCoc: 3, cones: false, dust: 120,
+    material: 'lambert', archDetail: 10, maxCoc: 3, cones: false, dust: 0, realTextures: false,
   },
   medium: {
-    name: 'medium', pixelRatio: 1.5, post: true, bloom: true, dof: false, msaa: 2,
+    name: 'medium', pixelRatio: 1.5, post: true, bloom: true, dof: false, msaa: 0, smaa: true,
     shadows: true, shadowSize: 1024, reflections: false, lampDensity: 0.75, lampLights: 10,
     riverLamps: 1200, skylineLamps: 520, fwParticles: 14000, fwTrail: 3, garlands: 0.7,
-    material: 'standard', archDetail: 16, maxCoc: 5, cones: true, dust: 260,
+    material: 'standard', archDetail: 16, maxCoc: 5, cones: true, dust: 0, realTextures: true,
   },
   high: {
-    name: 'high', pixelRatio: 2, post: true, bloom: true, dof: true, msaa: 4,
+    name: 'high', pixelRatio: 2, post: true, bloom: true, dof: true, msaa: 0, smaa: true,
     shadows: true, shadowSize: 2048, reflections: true, lampDensity: 1, lampLights: 16,
     riverLamps: 2400, skylineLamps: 900, fwParticles: 26000, fwTrail: 5, garlands: 1,
-    material: 'standard', archDetail: 24, maxCoc: 7, cones: true, dust: 420,
+    material: 'standard', archDetail: 24, maxCoc: 7, cones: true, dust: 90, realTextures: true,
   },
 };
 

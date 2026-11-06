@@ -42,6 +42,17 @@ export class CameraRig {
     this.aperture = shot.aperture ?? this.aperture;
   }
 
+  /** Set the camera state directly every frame (used by the scroll director). */
+  setDirect({ pos, target, fov, fit = 0, focus, aperture = 0 }) {
+    if (this._tween) { this._tween.kill(); this._tween = null; }
+    this.pos.copy(pos);
+    this.target.copy(target);
+    this.fov = fov;
+    this.fit = fit;
+    this.focus = focus ?? this.pos.distanceTo(this.target);
+    this.aperture = aperture;
+  }
+
   goTo(shot, { duration = 2.6, ease = 'power2.inOut', arc = 0.16 } = {}) {
     if (this.reduced || duration <= 0) {
       this.set(shot);

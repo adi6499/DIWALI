@@ -10,7 +10,7 @@ import { readJSON, writeJSON } from '../core/storage.js';
 import { STORAGE_KEYS, festivalToday } from '../config.js';
 
 export function createGreetingsWorld(ctx) {
-  const el = document.getElementById('world-greetings');
+  const el = document.getElementById('greetings');
   const canvas = document.getElementById('card-canvas');
   const to = document.getElementById('g-to');
   const from = document.getElementById('g-from');
@@ -83,18 +83,14 @@ export function createGreetingsWorld(ctx) {
     schedule();
   });
 
-  /** Grab a frame of the 3D courtyard to use behind the card. */
+  /** A frame of the lit palace courtyard, rendered off-screen, behind the card. */
   async function captureBackground() {
     if (!ctx.gl) return;
     try {
-      ctx.setShift('none');
-      await sleep(ctx.reduced ? 50 : 600);
-      background = ctx.engine.capture(1080, 1350);
+      background = ctx.capturePalace(1080, 1350);
     } catch (err) {
       console.warn('[greetings] capture failed', err);
       background = null;
-    } finally {
-      ctx.setShift('none');
     }
   }
 
@@ -150,15 +146,11 @@ export function createGreetingsWorld(ctx) {
       syncForm();
     },
     async enter() {
-      await ctx.showScene('palace');
-      ctx.ensureLit(true);
       await ensureFonts();
-      if (ctx.gl) {
-        ctx.palace.setMood('none');
-        await ctx.palace.rig.goTo(ctx.palace.shots.greeting, { duration: 2.6 });
-        if (g.style === 'courtyard') await captureBackground();
+      if (ctx.gl && g.style === 'courtyard' && !background) {
+        await sleep(ctx.reduced ? 0 : 300);
+        await captureBackground();
       }
-      ctx.setShift('none');
       render();
     },
     exit() {},

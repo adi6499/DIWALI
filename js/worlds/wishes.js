@@ -8,7 +8,7 @@ import { openDialog, shareContent } from '../core/ui.js';
 const MAX = 40;
 
 export function createWishesWorld(ctx) {
-  const el = document.getElementById('world-wishes');
+  const el = document.getElementById('wishes');
   const form = document.getElementById('wish-form');
   const text = document.getElementById('wish-text');
   const count = document.getElementById('wish-count');
@@ -96,9 +96,8 @@ export function createWishesWorld(ctx) {
     if (ctx.gl && river) {
       const item = river.addWish(w, { fresh: true });
       floatWords(value, item);
-      river.rig.goTo(river.shots.release, { duration: 2.4 }).then(() => setTimeout(() => {
-        if (ctx.current === 'wishes') river.rig.goTo(river.shots.river, { duration: 5 });
-      }, 3500));
+      // follow the diya out onto the water for a few seconds
+      ctx.director.hold('river', 'release', 7);
     } else {
       ctx.fallback.addWish(w, true);
     }
@@ -127,7 +126,7 @@ export function createWishesWorld(ctx) {
       const f = floating[i];
       const age = (now - f.born) / 1000;
       const p = river?.projectWish(f.item);
-      if (age > 7 || !p || ctx.current !== 'wishes') { f.span.remove(); floating.splice(i, 1); continue; }
+      if (age > 7 || !p || ctx.director.group !== 'wishes') { f.span.remove(); floating.splice(i, 1); continue; }
       const a = age < 0.6 ? age / 0.6 : Math.max(0, 1 - (age - 4) / 3);
       f.span.style.opacity = a.toFixed(3);
       f.span.style.transform = `translate(-50%, -100%) translate3d(${p.x.toFixed(1)}px, ${(p.y - age * 10).toFixed(1)}px, 0)`;
@@ -148,26 +147,30 @@ export function createWishesWorld(ctx) {
     if (r === 'copied') ctx.toast('Wish copied to the clipboard.');
   });
 
+  /** Put this visitor's earlier wishes back on the water once the river exists. */
+  function place() {
+    if (placed) return;
+    if (ctx.gl) {
+      if (!river) return;
+      river.awaken();
+      for (const w of wishes) river.addWish(w);
+    } else {
+      for (const w of wishes) ctx.fallback.addWish(w, false);
+    }
+    placed = true;
+  }
+
+  renderList();
+
   return {
     id: 'wishes',
     el,
-    heading: document.getElementById('wishes-title'),
+    /** Called when the river scene has loaded. */
+    riverReady(r) { river = r; place(); },
     async enter() {
-      if (ctx.gl) {
-        river = await ctx.getRiver();
-        await ctx.showScene('river');
-        river.awaken();
-        river.rig.goTo(river.shots.river, { duration: 0 });
-        if (!placed) {
-          for (const w of wishes) river.addWish(w);
-          placed = true;
-        }
-        unsubscribe = ctx.onFrame(updateFloating);
-      } else {
-        await ctx.showScene('river');
-        if (!placed) { for (const w of wishes) ctx.fallback.addWish(w, false); placed = true; }
-      }
-      ctx.setShift('panel');
+      if (ctx.gl && !river) river = await ctx.getRiver();
+      place();
+      if (ctx.gl && !unsubscribe) unsubscribe = ctx.onFrame(updateFloating);
       renderList();
     },
     exit() {
@@ -176,7 +179,7 @@ export function createWishesWorld(ctx) {
       for (const f of floating) f.span.remove();
       floating.length = 0;
     },
-    onPointerDown(e, x, y) {
+    onTap(e, x, y) {
       const hit = ctx.gl ? river?.pickWish(x, y) : ctx.fallback.pickWish(x, y);
       if (hit) {
         const w = wishes.find((k) => k.id === hit.id) || hit;

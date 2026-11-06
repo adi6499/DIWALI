@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Deepotsav — A Festival of Light</title>
-  <meta name="description" content="Light a terracotta diya and step into an immersive 3D Diwali: the Ramayana homecoming, Lakshmi Puja, Jain and Sikh observances, a rangoli studio, an ocean of floating wishes, fireworks made of light and greetings you can share.">
+  <meta name="description" content="Light a terracotta diya and scroll through an immersive 3D Diwali: the Ramayana homecoming, Lakshmi Puja, Dhanteras, Jain and Sikh observances, a rangoli studio, fireworks made of light, an ocean of floating wishes and greetings you can share.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="theme-color" content="#070a1f">
   <meta name="color-scheme" content="dark">
@@ -64,10 +64,13 @@
     </div>
   </header>
 
-  <main id="main" tabindex="-1">
+  <!-- One continuous journey. Scrolling flies the camera from section to
+       section; each <section> names the shot it shows (data-shot), the 3D
+       scene (data-scene, default palace) and the light mood (data-mood). -->
+  <main id="main" class="journey" tabindex="-1">
 
-    <!-- I. IGNITION ------------------------------------------------------- -->
-    <section class="world world-ignite" id="world-ignite" data-world="ignite" aria-labelledby="ignite-title">
+    <!-- I. THE FIRST FLAME ----------------------------------------------------- -->
+    <section class="sec sec-hero" id="ignite" data-group="ignite" data-shot="reveal" aria-labelledby="ignite-title">
       <div class="ignite-intro" id="ignite-intro">
         <p class="eyebrow">A festival of light</p>
         <h1 id="ignite-title" tabindex="-1">
@@ -84,249 +87,152 @@
         <span class="wick-ring" aria-hidden="true"></span>
         <span class="visually-hidden">Light the diya</span>
       </button>
-      <p class="wick-hint" id="wick-hint">Touch the wick to light the diya</p>
-
-      <div class="panel panel-ignite" id="ignite-after" hidden>
-        <p class="eyebrow">I · The first flame</p>
-        <h2 class="panel-title" id="ignite-after-title" tabindex="-1">Light, passed from lamp to lamp</h2>
-        <p><strong>Deepotsav</strong> (दीपोत्सव) means “festival of lamps”. <strong>Deepavali</strong> (दीपावली), or Diwali, means “a row of lamps”. It falls on Amavasya, the new-moon night, the darkest of the lunar month, usually in October or November.</p>
-        <p>Hindus, Jains and Sikhs, and many Buddhists in Nepal, each keep it for their own reasons. This journey follows those stories.</p>
-        <div class="panel-actions">
-          <button class="btn btn-primary" type="button" data-go="story">Begin the journey</button>
-        </div>
+      <div class="hero-foot">
+        <p class="wick-hint" id="wick-hint">Touch the wick to light the diya</p>
+        <button class="chip sound-chip" id="sound-chip" type="button" hidden>
+          <svg class="icon" aria-hidden="true"><use href="#i-sound-on"></use></svg>Play with sound
+        </button>
+        <p class="scroll-cue" id="scroll-cue" hidden><span>Scroll to begin the journey</span><svg class="icon" aria-hidden="true"><use href="#i-down"></use></svg></p>
       </div>
 
-      <div class="panel panel-greeting-received" id="greeting-received" hidden>
+      <div class="card card-received" id="greeting-received" hidden>
         <p class="eyebrow">A diya for you</p>
         <p class="received-headline" id="received-headline"></p>
         <p class="received-message" id="received-message"></p>
         <p class="received-from" id="received-from"></p>
-        <div class="panel-actions">
-          <button class="btn btn-primary" type="button" data-go="story">Explore Deepotsav</button>
+        <div class="card-actions">
           <button class="btn btn-ghost" type="button" data-go="greetings">Send one back</button>
         </div>
       </div>
     </section>
 
-    <!-- II. STORY ----------------------------------------------------------- -->
-    <section class="world world-story" id="world-story" data-world="story" aria-labelledby="story-title">
-      <div class="panel panel-story">
-        <p class="eyebrow">II · The Ramayana homecoming</p>
-        <h2 class="panel-title" id="story-title" tabindex="-1">The way home</h2>
-        <ol class="chapters" id="chapters">
-          <li class="chapter" data-chapter="0">
-            <h3><span class="chapter-num" aria-hidden="true">1</span>Fourteen years</h3>
-            <p>In the Ramayana, Prince Rama of Ayodhya accepts fourteen years of exile in the forest so that his father, King Dasharatha, can keep a promise he once made. Sita and Rama’s brother Lakshmana choose to go with him.</p>
-          </li>
-          <li class="chapter" data-chapter="1">
-            <h3><span class="chapter-num" aria-hidden="true">2</span>Light over darkness</h3>
-            <p>During the exile, Sita is abducted by Ravana, king of Lanka. With Hanuman and an army of allies, Rama crosses the sea, and after a long war Ravana is defeated. Many communities mark that victory as Dussehra, about twenty days before Diwali.</p>
-          </li>
-          <li class="chapter" data-chapter="2">
-            <h3><span class="chapter-num" aria-hidden="true">3</span>The road to Ayodhya</h3>
-            <p>Once the exile is over, Rama, Sita and Lakshmana travel home. In Valmiki’s telling they ride the flying chariot Pushpaka. Hanuman goes ahead with the news to Bharata, who has ruled in Rama’s name all those years with Rama’s sandals on the throne.</p>
-          </li>
-          <li class="chapter" data-chapter="3">
-            <h3><span class="chapter-num" aria-hidden="true">4</span>A city of lamps</h3>
-            <p>Tradition holds that the people of Ayodhya lit clay lamps along every path, rooftop and riverbank to welcome them home on that moonless night. Deepavali remembers that welcome. In Ayodhya today, millions of diyas are lit for Deepotsav on the banks of the Sarayu.</p>
-            <p class="aside">The Ramayana is told in hundreds of versions across South and Southeast Asia, and families link Diwali to different stories. Some of those stories follow.</p>
-          </li>
+    <section class="sec" id="ignite-about" data-group="ignite" data-shot="about" aria-labelledby="about-title">
+      <div class="card">
+        <p class="eyebrow">I · The first flame</p>
+        <h2 class="card-title" id="about-title">Light, passed from lamp to lamp</h2>
+        <p><strong>Deepotsav</strong> (दीपोत्सव) means “festival of lamps”. <strong>Deepavali</strong> (दीपावली), or Diwali, means “a row of lamps”. It falls on Amavasya, the new-moon night, the darkest of the lunar month, usually in October or November.</p>
+        <p>Hindus, Jains and Sikhs, and many Buddhists in Nepal, each keep it for their own reasons. Keep scrolling: this journey follows those stories.</p>
+      </div>
+    </section>
+
+    <!-- II. THE WAY HOME ---------------------------------------------------------- -->
+    <section class="sec" id="story" data-group="story" data-shot="story0" aria-labelledby="story-1">
+      <article class="card">
+        <p class="eyebrow">II · The way home · 1 of 4</p>
+        <h2 class="card-title" id="story-1">Fourteen years</h2>
+        <p>In the Ramayana, Prince Rama of Ayodhya accepts fourteen years of exile in the forest so that his father, King Dasharatha, can keep a promise he once made. Sita and Rama’s brother Lakshmana choose to go with him.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="story" data-shot="story1" aria-labelledby="story-2">
+      <article class="card">
+        <p class="eyebrow">II · The way home · 2 of 4</p>
+        <h2 class="card-title" id="story-2">Light over darkness</h2>
+        <p>During the exile, Sita is abducted by Ravana, king of Lanka. With Hanuman and an army of allies, Rama crosses the sea, and after a long war Ravana is defeated. Many communities mark that victory as Dussehra, about twenty days before Diwali.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="story" data-shot="story2" aria-labelledby="story-3">
+      <article class="card">
+        <p class="eyebrow">II · The way home · 3 of 4</p>
+        <h2 class="card-title" id="story-3">The road to Ayodhya</h2>
+        <p>Once the exile is over, Rama, Sita and Lakshmana travel home. In Valmiki’s telling they ride the flying chariot Pushpaka. Hanuman goes ahead with the news to Bharata, who has ruled in Rama’s name all those years with Rama’s sandals on the throne.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="story" data-shot="story3" aria-labelledby="story-4">
+      <article class="card">
+        <p class="eyebrow">II · The way home · 4 of 4</p>
+        <h2 class="card-title" id="story-4">A city of lamps</h2>
+        <p>Tradition holds that the people of Ayodhya lit clay lamps along every path, rooftop and riverbank to welcome them home on that moonless night. Deepavali remembers that welcome. In Ayodhya today, millions of diyas are lit for Deepotsav on the banks of the Sarayu.</p>
+        <p class="aside">The Ramayana is told in hundreds of versions across South and Southeast Asia, and families link Diwali to different stories. Some of those stories follow.</p>
+      </article>
+    </section>
+
+    <!-- III. WHAT DIWALI MEANS ------------------------------------------------------ -->
+    <section class="sec" id="meaning" data-group="meaning" data-shot="lakshmi" data-mood="lakshmi" aria-labelledby="m-lakshmi">
+      <article class="card">
+        <p class="eyebrow">III · What Diwali means</p>
+        <h2 class="card-title" id="m-lakshmi">Welcoming Lakshmi</h2>
+        <p>On the evening of Amavasya, families worship <strong>Lakshmi</strong>, goddess of prosperity, good fortune and well-being. She is usually worshipped together with <strong>Ganesha</strong>, who removes obstacles. In one well-known story, Lakshmi rose from the churning of the cosmic ocean.</p>
+        <p>Homes are cleaned and left open to the light. Rangoli is drawn at the threshold, often with small footprints leading inside to welcome the goddess, and lamps are kept burning into the night. In western India many business families begin a new financial year at this time, and bless their new account books in <em>Chopda Pujan</em>.</p>
+      </article>
+    </section>
+    <section class="sec" id="dhanteras" data-group="meaning" data-shot="dhanteras" data-mood="dhanteras" aria-labelledby="m-dhanteras">
+      <article class="card">
+        <p class="eyebrow">III · <span lang="hi">शुभ धनतेरस</span> · Happy Dhanteras</p>
+        <h2 class="card-title" id="m-dhanteras">Dhanteras</h2>
+        <p><strong>Dhanteras</strong> (Dhanatrayodashi) opens the five days of Diwali. Its name joins <em>dhan</em>, wealth, and <em>teras</em>, the thirteenth day of the waning moon, two days before Lakshmi Puja.</p>
+        <p><strong>The physician of the gods.</strong> When the devas and asuras churned the cosmic ocean (the Samudra Manthan), <strong>Dhanvantari</strong> rose from the waters carrying a pot of <em>amrita</em>, the nectar of immortality. He is the physician of the gods and the deity of Ayurveda. Dhanteras is also kept as Dhanvantari Jayanti, a day to pray for good health, in the spirit of the saying <span lang="hi">“पहला सुख निरोगी काया”</span>: the first happiness is a healthy body.</p>
+        <p><strong>The lamp that kept Yama away.</strong> A popular legend tells of King Hima’s son, whose stars foretold death by snakebite on the fourth night of his marriage. That night his young bride heaped her gold and silver ornaments and coins at the door, lit lamps all around, and kept him awake with stories and songs. Yama, god of death, came in the form of a serpent, but the blaze of light dazzled him. He sat on the glittering heap listening until dawn, then quietly went away.</p>
+        <p>So on Dhanteras many families light a lamp for Yama (<em>Yama Deepam</em>) outside the home, facing south, the direction of Yama. They buy something new in gold, silver or metal, often utensils, and worship Lakshmi and Kubera, keeper of the treasures of the gods. At the threshold of the courtyard you can see a heap of gold and a four-wick lamp, one wick turned to the south.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="meaning" data-shot="jain" data-mood="jain" aria-labelledby="m-jain">
+      <article class="card">
+        <p class="eyebrow">III · Jain Diwali</p>
+        <h2 class="card-title" id="m-jain">The nirvana of Mahavira</h2>
+        <p>For Jains, Diwali marks the <strong>nirvana (moksha) of Bhagwan Mahavira</strong>, the 24th Tirthankara. According to Jain tradition he attained it at Pavapuri, in present-day Bihar, in 527 BCE.</p>
+        <p>The Kalpa Sutra says the assembled kings lit lamps that night: since the light of knowledge had gone, they would make a light of material things. The next day his chief disciple, <strong>Gautama Swami</strong>, attained <em>kevala jnana</em> (omniscience), and the Jain new year, Vira Nirvana Samvat, begins.</p>
+        <p>Many Jains keep the day with fasting, prayer and recitation of the Uttaradhyayana Sutra, believed to be Mahavira’s final teaching. Many also choose lamps over firecrackers out of <em>ahimsa</em>, care for every living being.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="meaning" data-shot="sikh" data-mood="sikh" aria-labelledby="m-sikh">
+      <article class="card">
+        <p class="eyebrow">III · Sikh Diwali</p>
+        <h2 class="card-title" id="m-sikh">Bandi Chhor Divas</h2>
+        <p>Sikhs celebrate <strong>Bandi Chhor Divas</strong>, the “Day of Liberation”. In 1619 (sources differ slightly on the year), the sixth Guru, <strong>Guru Hargobind Sahib Ji</strong>, was freed from Gwalior Fort, where Emperor Jahangir had held him.</p>
+        <p>The Guru refused to leave unless 52 imprisoned kings were freed with him. He was told that only those who could hold on to his robe might go, so he had a cloak made with 52 tassels, and every one of them walked out with him.</p>
+        <p>When he reached Amritsar, the Harmandir Sahib was lit with lamps. It still is: every year the Golden Temple and its sarovar shine, and gurdwaras around the world gather in celebration.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="meaning" data-shot="days" data-mood="days" aria-labelledby="m-days">
+      <article class="card">
+        <p class="eyebrow">III · The festival week</p>
+        <h2 class="card-title" id="m-days">Five days of light</h2>
+        <ol class="days">
+          <li><strong>Dhanteras</strong>: Dhanvantari and Lakshmi are honoured; buying metal is auspicious, and a lamp is lit for Yama.</li>
+          <li><strong>Naraka Chaturdashi</strong> (Choti Diwali): Krishna’s victory over the demon Narakasura. In the South, Maharashtra and Goa the day starts before dawn with an oil bath. In Tamil Nadu, this is Deepavali itself.</li>
+          <li><strong>Lakshmi Puja</strong>: the new-moon night of lamps, rangoli and sweets shared with neighbours. In Bengal, Assam and Odisha, <strong>Kali Puja</strong> is celebrated on this same night.</li>
+          <li><strong>Govardhan Puja · Bali Pratipada · New Year</strong>: Krishna lifting Govardhan hill to shelter the people of Braj, with temples offering <em>Annakut</em>, a “mountain of food”. In Maharashtra and Karnataka, the generous King Bali is remembered, couples celebrate Padwa, and Gujarati families welcome the New Year (Bestu Varas).</li>
+          <li><strong>Bhai Dooj</strong>: sisters pray for their brothers’ well-being and brothers give gifts. It is Bhau-beej in Maharashtra, Bhai Phonta in Bengal and Bhai Tika in Nepal.</li>
         </ol>
-        <div class="panel-actions">
-          <button class="btn btn-ghost" type="button" id="story-prev">Back</button>
-          <button class="btn btn-primary" type="button" id="story-next">Light the next lamps</button>
-        </div>
-        <p class="progress-text" id="story-progress" aria-live="polite"></p>
-      </div>
+        <p class="aside">Days follow the lunar calendar, and customs differ from region to region and family to family.</p>
+      </article>
+    </section>
+    <section class="sec" data-group="meaning" data-shot="regions" data-mood="regions" aria-labelledby="m-regions">
+      <article class="card">
+        <p class="eyebrow">III · Across India and the world</p>
+        <h2 class="card-title" id="m-regions">One festival, many lights</h2>
+        <ul class="regions">
+          <li><strong>Bengal, Assam, Odisha</strong>: Kali Puja on Amavasya. In Odisha, families burn jute sticks in <em>Kaunria Kathi</em> to light the way for ancestors.</li>
+          <li><strong>Gujarat</strong>: Chopda Pujan for the new accounts, then the New Year with greetings of <em>Saal Mubarak</em>.</li>
+          <li><strong>Maharashtra</strong>: trays of <em>faral</em> sweets and snacks, and clay forts built by children in memory of Shivaji’s forts.</li>
+          <li><strong>Goa</strong>: giant Narakasura effigies paraded and burned before dawn.</li>
+          <li><strong>Tamil Nadu</strong>: a dawn oil bath, new clothes and the greeting “Ganga snanam aacha?”, meaning “Have you had your Ganga bath?”</li>
+          <li><strong>Punjab</strong>: Bandi Chhor Divas at the Harmandir Sahib.</li>
+          <li><strong>Nepal</strong>: Tihar, five days honouring crows, dogs, cows and Lakshmi, Mha Puja among the Newars, and Bhai Tika.</li>
+          <li><strong>Varanasi</strong>: fifteen days later, on Kartik Purnima, the ghats glow again for <em>Dev Deepawali</em>.</li>
+          <li><strong>Around the world</strong>: a public holiday in Fiji, Guyana, Malaysia, Mauritius, Nepal, Singapore, Sri Lanka, Suriname and Trinidad and Tobago, and celebrated in cities from Leicester to Durban and Toronto.</li>
+        </ul>
+      </article>
     </section>
 
-    <!-- III. MEANING -------------------------------------------------------- -->
-    <section class="world world-meaning" id="world-meaning" data-world="meaning" aria-labelledby="meaning-title">
-      <div class="panel panel-meaning">
-        <p class="eyebrow">III · Many lights, one night</p>
-        <h2 class="panel-title" id="meaning-title" tabindex="-1">What Diwali means</h2>
-        <div class="tabs" role="tablist" aria-label="Traditions of Diwali" id="meaning-tabs">
-          <button role="tab" type="button" id="tab-lakshmi" aria-controls="tp-lakshmi" aria-selected="true" data-tab="lakshmi">Lakshmi Puja</button>
-          <button role="tab" type="button" id="tab-dhanteras" aria-controls="tp-dhanteras" aria-selected="false" tabindex="-1" data-tab="dhanteras">Dhanteras</button>
-          <button role="tab" type="button" id="tab-jain" aria-controls="tp-jain" aria-selected="false" tabindex="-1" data-tab="jain">Jain</button>
-          <button role="tab" type="button" id="tab-sikh" aria-controls="tp-sikh" aria-selected="false" tabindex="-1" data-tab="sikh">Sikh</button>
-          <button role="tab" type="button" id="tab-days" aria-controls="tp-days" aria-selected="false" tabindex="-1" data-tab="days">Five days</button>
-          <button role="tab" type="button" id="tab-regions" aria-controls="tp-regions" aria-selected="false" tabindex="-1" data-tab="regions">Regions</button>
-        </div>
-
-        <div class="tabpanel" role="tabpanel" id="tp-lakshmi" aria-labelledby="tab-lakshmi" tabindex="0">
-          <h3>Welcoming Lakshmi</h3>
-          <p>On the evening of Amavasya, families worship <strong>Lakshmi</strong>, goddess of prosperity, good fortune and well-being. She is usually worshipped together with <strong>Ganesha</strong>, who removes obstacles. In one well-known story, Lakshmi rose from the churning of the cosmic ocean.</p>
-          <p>Homes are cleaned and left open to the light. Rangoli is drawn at the threshold, often with small footprints leading inside to welcome the goddess, and lamps are kept burning into the night. In western India many business families begin a new financial year at this time, and bless their new account books in <em>Chopda Pujan</em>.</p>
-        </div>
-
-        <div class="tabpanel" role="tabpanel" id="tp-dhanteras" aria-labelledby="tab-dhanteras" tabindex="0" hidden>
-          <h3><span lang="hi">शुभ धनतेरस</span> · Happy Dhanteras</h3>
-          <p><strong>Dhanteras</strong> (Dhanatrayodashi) opens the five days of Diwali. Its name joins <em>dhan</em>, wealth, and <em>teras</em>, the thirteenth day of the waning moon, two days before Lakshmi Puja.</p>
-          <p><strong>The physician of the gods.</strong> When the devas and asuras churned the cosmic ocean (the Samudra Manthan), <strong>Dhanvantari</strong> rose from the waters carrying a pot of <em>amrita</em>, the nectar of immortality. He is the physician of the gods and the deity of Ayurveda. Dhanteras is also kept as Dhanvantari Jayanti, a day to pray for good health, in the spirit of the saying <span lang="hi">“पहला सुख निरोगी काया”</span>: the first happiness is a healthy body.</p>
-          <p><strong>The lamp that kept Yama away.</strong> A popular legend tells of King Hima’s son, whose stars foretold death by snakebite on the fourth night of his marriage. That night his young bride heaped her gold and silver ornaments and coins at the door, lit lamps all around, and kept him awake with stories and songs. Yama, god of death, came in the form of a serpent, but the blaze of light dazzled him. He sat on the glittering heap listening until dawn, then quietly went away.</p>
-          <p>So on Dhanteras many families light a lamp for Yama (<em>Yama Deepam</em>) outside the home, facing south, the direction of Yama. They buy something new in gold, silver or metal, often utensils, and worship Lakshmi and Kubera, keeper of the treasures of the gods. Look at the threshold of the courtyard: a heap of gold and a four-wick lamp, one wick turned to the south.</p>
-        </div>
-
-        <div class="tabpanel" role="tabpanel" id="tp-jain" aria-labelledby="tab-jain" tabindex="0" hidden>
-          <h3>The nirvana of Mahavira</h3>
-          <p>For Jains, Diwali marks the <strong>nirvana (moksha) of Bhagwan Mahavira</strong>, the 24th Tirthankara. According to Jain tradition he attained it at Pavapuri, in present-day Bihar, in 527 BCE.</p>
-          <p>The Kalpa Sutra says the assembled kings lit lamps that night: since the light of knowledge had gone, they would make a light of material things. The next day his chief disciple, <strong>Gautama Swami</strong>, attained <em>kevala jnana</em> (omniscience), and the Jain new year, Vira Nirvana Samvat, begins.</p>
-          <p>Many Jains keep the day with fasting, prayer and recitation of the Uttaradhyayana Sutra, believed to be Mahavira’s final teaching. Many also choose lamps over firecrackers out of <em>ahimsa</em>, care for every living being.</p>
-        </div>
-
-        <div class="tabpanel" role="tabpanel" id="tp-sikh" aria-labelledby="tab-sikh" tabindex="0" hidden>
-          <h3>Bandi Chhor Divas</h3>
-          <p>Sikhs celebrate <strong>Bandi Chhor Divas</strong>, the “Day of Liberation”. In 1619 (sources differ slightly on the year), the sixth Guru, <strong>Guru Hargobind Sahib Ji</strong>, was freed from Gwalior Fort, where Emperor Jahangir had held him.</p>
-          <p>The Guru refused to leave unless 52 imprisoned kings were freed with him. He was told that only those who could hold on to his robe might go, so he had a cloak made with 52 tassels, and every one of them walked out with him.</p>
-          <p>When he reached Amritsar, the Harmandir Sahib was lit with lamps. It still is: every year the Golden Temple and its sarovar shine, and gurdwaras around the world gather in celebration.</p>
-        </div>
-
-        <div class="tabpanel" role="tabpanel" id="tp-days" aria-labelledby="tab-days" tabindex="0" hidden>
-          <h3>Five days of light</h3>
-          <ol class="days">
-            <li><strong>Dhanteras</strong>: honours Dhanvantari, physician of the gods, and Lakshmi. Buying metal, like new utensils, silver or gold, is considered auspicious, and many homes light a lamp for Yama to protect the family. Its stories are in the Dhanteras tab.</li>
-            <li><strong>Naraka Chaturdashi</strong> (Choti Diwali): remembers Krishna’s victory over the demon Narakasura. In the South, Maharashtra and Goa the day starts before dawn with an oil bath. In Tamil Nadu, this is Deepavali itself.</li>
-            <li><strong>Lakshmi Puja</strong>: the new-moon night of lamps, rangoli and sweets shared with neighbours. In Bengal, Assam and Odisha, <strong>Kali Puja</strong> is celebrated on this same night.</li>
-            <li><strong>Govardhan Puja · Bali Pratipada · New Year</strong>: Krishna lifting Govardhan hill to shelter the people of Braj, with temples offering <em>Annakut</em>, a “mountain of food”. In Maharashtra and Karnataka, the generous King Bali is remembered, couples celebrate Padwa, and Gujarati families welcome the New Year (Bestu Varas).</li>
-            <li><strong>Bhai Dooj</strong>: sisters pray for their brothers’ well-being and brothers give gifts. It is Bhau-beej in Maharashtra, Bhai Phonta in Bengal and Bhai Tika in Nepal.</li>
-          </ol>
-          <p class="aside">Days follow the lunar calendar, and customs differ from region to region and family to family.</p>
-        </div>
-
-        <div class="tabpanel" role="tabpanel" id="tp-regions" aria-labelledby="tab-regions" tabindex="0" hidden>
-          <h3>One festival, many lights</h3>
-          <ul class="regions">
-            <li><strong>Bengal, Assam, Odisha</strong>: Kali Puja on Amavasya. In Odisha, families burn jute sticks in <em>Kaunria Kathi</em> to light the way for ancestors.</li>
-            <li><strong>Gujarat</strong>: Chopda Pujan for the new accounts, then the New Year with greetings of <em>Saal Mubarak</em>.</li>
-            <li><strong>Maharashtra</strong>: trays of <em>faral</em> sweets and snacks, and clay forts built by children in memory of Shivaji’s forts.</li>
-            <li><strong>Goa</strong>: giant Narakasura effigies paraded and burned before dawn.</li>
-            <li><strong>Tamil Nadu</strong>: a dawn oil bath, new clothes and the greeting “Ganga snanam aacha?”, meaning “Have you had your Ganga bath?”</li>
-            <li><strong>Punjab</strong>: Bandi Chhor Divas at the Harmandir Sahib.</li>
-            <li><strong>Nepal</strong>: Tihar, five days honouring crows, dogs, cows and Lakshmi, Mha Puja among the Newars, and Bhai Tika.</li>
-            <li><strong>Varanasi</strong>: fifteen days later, on Kartik Purnima, the ghats glow again for <em>Dev Deepawali</em>.</li>
-            <li><strong>Around the world</strong>: a public holiday in Fiji, Guyana, Malaysia, Mauritius, Nepal, Singapore, Sri Lanka, Suriname and Trinidad and Tobago, and celebrated in cities from Leicester to Durban and Toronto.</li>
-          </ul>
-        </div>
-
-        <div class="panel-actions">
-          <button class="btn btn-primary" type="button" data-go="rangoli">Draw a rangoli</button>
+    <!-- IV. RANGOLI ------------------------------------------------------------------- -->
+    <section class="sec" id="rangoli" data-group="rangoli" data-shot="rangoliView" aria-labelledby="rangoli-card-title">
+      <div class="card">
+        <p class="eyebrow">IV · Rangoli</p>
+        <h2 class="card-title" id="rangoli-card-title">Draw at the threshold</h2>
+        <p>Rangoli welcomes guests, and on Diwali Lakshmi, at the door. The design on the courtyard floor is yours to redraw: mirrored symmetry, powder colours, petals and dots.</p>
+        <div class="card-actions">
+          <button class="btn btn-primary" type="button" id="open-studio"><svg class="icon" aria-hidden="true"><use href="#i-sparkle"></use></svg>Draw your rangoli</button>
         </div>
       </div>
     </section>
 
-    <!-- IV. RANGOLI --------------------------------------------------------- -->
-    <section class="world world-rangoli" id="world-rangoli" data-world="rangoli" aria-labelledby="rangoli-title">
-      <div class="studio" id="studio">
-        <div class="studio-head">
-          <p class="eyebrow">IV · Rangoli studio</p>
-          <h2 class="panel-title" id="rangoli-title" tabindex="-1">Draw at the threshold</h2>
-          <p class="small">Rangoli welcomes guests, and on Diwali Lakshmi, at the door. Draw with mirrored symmetry, and your design is laid on the courtyard floor.</p>
-        </div>
-
-        <div class="studio-canvas-wrap" id="studio-canvas-wrap">
-          <canvas id="rangoli-canvas" class="rangoli-canvas" tabindex="0" role="img"
-            aria-label="Rangoli canvas" aria-describedby="rangoli-help"></canvas>
-          <div class="brush-cursor" id="brush-cursor" aria-hidden="true"></div>
-        </div>
-        <p id="rangoli-help" class="visually-hidden">Draw with a finger, pen or mouse. With the keyboard: arrow keys move the brush, hold Shift to move faster, Space toggles drawing, Enter places a stamp or ring, plus and minus change the size, and Control+Z undoes.</p>
-
-        <div class="studio-tools" role="toolbar" aria-label="Rangoli tools" aria-controls="rangoli-canvas">
-          <fieldset class="tool-group">
-            <legend>Tool</legend>
-            <div class="seg" role="radiogroup" aria-label="Tool" id="tool-group">
-              <button type="button" role="radio" aria-checked="true" data-tool="powder">Powder</button>
-              <button type="button" role="radio" aria-checked="false" data-tool="petal">Petal</button>
-              <button type="button" role="radio" aria-checked="false" data-tool="dots">Dots</button>
-              <button type="button" role="radio" aria-checked="false" data-tool="ring">Ring</button>
-              <button type="button" role="radio" aria-checked="false" data-tool="eraser">Eraser</button>
-            </div>
-          </fieldset>
-
-          <fieldset class="tool-group">
-            <legend>Colour</legend>
-            <div class="swatches" role="radiogroup" aria-label="Powder colour" id="swatches"></div>
-          </fieldset>
-
-          <div class="tool-row">
-            <label class="field-inline" for="sym-select">Symmetry
-              <select id="sym-select">
-                <option value="1">None</option>
-                <option value="4">4-fold</option>
-                <option value="6">6-fold</option>
-                <option value="8" selected>8-fold</option>
-                <option value="12">12-fold</option>
-                <option value="16">16-fold</option>
-              </select>
-            </label>
-            <label class="field-inline check" for="mirror-toggle"><input type="checkbox" id="mirror-toggle" checked> Mirror</label>
-            <label class="field-inline" for="floor-select">Floor
-              <select id="floor-select">
-                <option value="#5a2418">Red earth</option>
-                <option value="#1b1a2c" selected>Night stone</option>
-                <option value="#8f7a5c">Sandstone</option>
-                <option value="#2c3a2a">Cow-dung green</option>
-              </select>
-            </label>
-          </div>
-          <label class="field-range" for="size-range">Size <input type="range" id="size-range" min="3" max="48" value="12"></label>
-
-          <div class="tool-row actions">
-            <button type="button" class="btn btn-small" id="r-undo"><svg class="icon" aria-hidden="true"><use href="#i-undo"></use></svg>Undo</button>
-            <button type="button" class="btn btn-small" id="r-redo"><svg class="icon" aria-hidden="true"><use href="#i-redo"></use></svg>Redo</button>
-            <button type="button" class="btn btn-small" id="r-inspire"><svg class="icon" aria-hidden="true"><use href="#i-sparkle"></use></svg>Inspire me</button>
-            <button type="button" class="btn btn-small" id="r-clear"><svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>Clear</button>
-          </div>
-          <div class="tool-row actions">
-            <button type="button" class="btn btn-small btn-primary" id="r-download"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>Download PNG</button>
-            <button type="button" class="btn btn-small" id="r-view"><svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg>See it in the courtyard</button>
-            <button type="button" class="btn btn-small" data-go="wishes">Next: wishes</button>
-          </div>
-        </div>
-      </div>
-      <div class="panel panel-courtyard-view" id="courtyard-view" hidden>
-        <p class="small">Your rangoli on the courtyard floor.</p>
-        <button type="button" class="btn btn-primary" id="r-back">Back to drawing</button>
-      </div>
-    </section>
-
-    <!-- V. WISHES ----------------------------------------------------------- -->
-    <section class="world world-wishes" id="world-wishes" data-world="wishes" aria-labelledby="wishes-title">
-      <div class="panel panel-wishes">
-        <p class="eyebrow">V · Ocean of wishes</p>
-        <h2 class="panel-title" id="wishes-title" tabindex="-1">Set a wish afloat</h2>
-        <p class="small">On Diwali, and again on Kartik Purnima, diyas are set afloat on rivers, lakes and the sea. Write a wish and send your diya out across the water.</p>
-        <form class="wish-form" id="wish-form" novalidate>
-          <label for="wish-text">Your wish</label>
-          <textarea id="wish-text" maxlength="160" rows="3" placeholder="May everyone I love be well…" aria-describedby="wish-count wish-privacy"></textarea>
-          <p class="counter" id="wish-count" aria-live="polite">0 / 160</p>
-          <div class="consent" id="wish-public" hidden>
-            <input type="checkbox" id="wish-consent">
-            <label for="wish-consent">Also share this wish anonymously on the public wish wall</label>
-            <p class="fine">Off unless you tick it. Only the wish text is sent: no name and no device details.</p>
-          </div>
-          <div class="panel-actions">
-            <button class="btn btn-primary" type="submit" id="wish-submit">Release the diya</button>
-          </div>
-        </form>
-        <p class="privacy-note" id="wish-privacy"><svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg><span id="wish-privacy-text">Your wishes stay on this device. Nothing is uploaded.</span></p>
-        <details class="my-wishes" id="my-wishes">
-          <summary>Your diyas on the water (<span id="wish-total">0</span>)</summary>
-          <ul class="wish-list" id="wish-list"></ul>
-          <button type="button" class="btn btn-small btn-ghost" id="wish-clear">Remove all my wishes</button>
-        </details>
-        <div class="panel-actions">
-          <button class="btn btn-ghost" type="button" data-go="fireworks">Next: fireworks</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- VI. FIREWORKS ------------------------------------------------------- -->
-    <section class="world world-fireworks" id="world-fireworks" data-world="fireworks" aria-labelledby="fireworks-title">
-      <div class="panel panel-fireworks">
-        <p class="eyebrow">VI · Fireworks of light</p>
-        <h2 class="panel-title" id="fireworks-title" tabindex="-1">Paint the sky</h2>
-        <p class="small" id="fw-help">Tap the sky to launch. In sparkler mode, drag to write with light. These fireworks are made only of light, with no smoke, and no sound unless you turn it on.</p>
+    <!-- V. FIREWORKS ------------------------------------------------------------------ -->
+    <section class="sec" id="fireworks" data-group="fireworks" data-shot="fireworks" aria-labelledby="fireworks-title">
+      <div class="card panel-fireworks">
+        <p class="eyebrow">V · Fireworks of light</p>
+        <h2 class="card-title" id="fireworks-title">Paint the sky</h2>
+        <p class="small" id="fw-help">Tap the sky to launch. Choose the sparkler and drag across the sky to write with light. Made only of light, with no smoke, and no sound unless you turn it on.</p>
         <div class="chips" role="radiogroup" aria-label="Firework" id="fw-types">
           <button type="button" role="radio" aria-checked="true" data-fw="peony">Peony</button>
           <button type="button" role="radio" aria-checked="false" data-fw="chrysanthemum">Chrysanthemum</button>
@@ -339,24 +245,51 @@
           <button type="button" role="radio" aria-checked="false" data-fw="chakri">Chakri</button>
           <button type="button" role="radio" aria-checked="false" data-fw="sparkler">Phuljhadi (sparkler)</button>
         </div>
-        <div class="panel-actions">
+        <div class="card-actions">
           <button class="btn" type="button" id="fw-launch">Launch</button>
           <button class="btn btn-primary" type="button" id="fw-finale">Grand finale</button>
-          <button class="btn btn-ghost" type="button" data-go="greetings">Next: greetings</button>
         </div>
         <p class="fine">Many cities limit firecrackers to protect air quality, animals and people who are sensitive to noise. Light as many of these as you like.</p>
       </div>
     </section>
 
-    <!-- VII. GREETINGS ------------------------------------------------------ -->
-    <section class="world world-greetings" id="world-greetings" data-world="greetings" aria-labelledby="greetings-title">
-      <div class="greet" id="greet">
+    <!-- VI. WISHES -------------------------------------------------------------------- -->
+    <section class="sec" id="wishes" data-group="wishes" data-scene="river" data-shot="river" aria-labelledby="wishes-title">
+      <div class="card">
+        <p class="eyebrow">VI · Ocean of wishes</p>
+        <h2 class="card-title" id="wishes-title">Set a wish afloat</h2>
+        <p class="small">On Diwali, and again on Kartik Purnima, diyas are set afloat on rivers, lakes and the sea. Write a wish and send your diya out across the water. Tap a floating diya of yours to read its wish.</p>
+        <form class="wish-form" id="wish-form" novalidate>
+          <label for="wish-text">Your wish</label>
+          <textarea id="wish-text" maxlength="160" rows="3" placeholder="May everyone I love be well…" aria-describedby="wish-count wish-privacy"></textarea>
+          <p class="counter" id="wish-count" aria-live="polite">0 / 160</p>
+          <div class="consent" id="wish-public" hidden>
+            <input type="checkbox" id="wish-consent">
+            <label for="wish-consent">Also share this wish anonymously on the public wish wall</label>
+            <p class="fine">Off unless you tick it. Only the wish text is sent: no name and no device details.</p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" type="submit" id="wish-submit">Release the diya</button>
+          </div>
+        </form>
+        <p class="privacy-note" id="wish-privacy"><svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg><span id="wish-privacy-text">Your wishes stay on this device. Nothing is uploaded.</span></p>
+        <details class="my-wishes" id="my-wishes">
+          <summary>Your diyas on the water (<span id="wish-total">0</span>)</summary>
+          <ul class="wish-list" id="wish-list"></ul>
+          <button type="button" class="btn btn-small btn-ghost" id="wish-clear">Remove all my wishes</button>
+        </details>
+      </div>
+    </section>
+
+    <!-- VII. GREETINGS ---------------------------------------------------------------- -->
+    <section class="sec sec-greet" id="greetings" data-group="greetings" data-scene="river" data-shot="riverGreeting" aria-labelledby="greetings-title">
+      <div class="card card-wide greet">
         <div class="greet-preview">
           <canvas id="card-canvas" class="card-canvas" width="1080" height="1350" role="img" aria-label="Greeting card preview"></canvas>
         </div>
-        <form class="panel greet-form" id="greet-form" novalidate>
+        <form class="greet-form" id="greet-form" novalidate>
           <p class="eyebrow">VII · Send the light on</p>
-          <h2 class="panel-title" id="greetings-title" tabindex="-1">Your Diwali greeting</h2>
+          <h2 class="card-title" id="greetings-title">Your Diwali greeting</h2>
           <div class="field-pair">
             <label for="g-to">To <input id="g-to" type="text" maxlength="40" autocomplete="off" placeholder="Their name"></label>
             <label for="g-from">From <input id="g-from" type="text" maxlength="40" autocomplete="off" placeholder="Your name"></label>
@@ -384,36 +317,111 @@
               <button type="button" role="radio" aria-checked="false" data-accent="rose">Rose</button>
             </div>
           </fieldset>
-          <div class="panel-actions">
+          <div class="card-actions">
             <button class="btn btn-primary" type="button" id="g-download"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>Download card</button>
             <button class="btn" type="button" id="g-share"><svg class="icon" aria-hidden="true"><use href="#i-share"></use></svg>Share</button>
             <button class="btn" type="button" id="g-link"><svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg>Copy personal link</button>
           </div>
           <p class="fine">The names and message travel only inside the link or image you share. Nothing is stored on a server. Opening the link shows them a diya to light, and then your message.</p>
-          <div class="panel-actions">
-            <button class="btn btn-ghost" type="button" data-go="ignite">Back to the first flame</button>
-          </div>
         </form>
+      </div>
+    </section>
+
+    <section class="sec sec-end" id="end" data-group="greetings" data-scene="river" data-shot="riverEnd" aria-labelledby="end-title">
+      <div class="card card-end">
+        <p class="end-deva" lang="hi">शुभ दीपावली</p>
+        <h2 class="card-title" id="end-title">May your light reach every home</h2>
+        <p class="small">Thank you for lighting a diya with us.</p>
+        <div class="card-actions">
+          <button class="btn btn-primary" type="button" data-go="ignite">Back to the first flame</button>
+        </div>
       </div>
     </section>
   </main>
 
+  <!-- Rangoli studio: opens over the journey -->
+  <div class="studio-overlay" id="studio-overlay" role="dialog" aria-modal="true" aria-labelledby="rangoli-title" hidden>
+    <div class="studio" id="studio">
+      <div class="studio-head">
+        <div>
+          <p class="eyebrow">IV · Rangoli studio</p>
+          <h2 class="card-title" id="rangoli-title" tabindex="-1">Draw at the threshold</h2>
+        </div>
+        <button class="btn btn-primary btn-small" type="button" id="studio-close">Done</button>
+      </div>
+
+      <div class="studio-canvas-wrap" id="studio-canvas-wrap">
+        <canvas id="rangoli-canvas" class="rangoli-canvas" tabindex="0" role="img"
+          aria-label="Rangoli canvas" aria-describedby="rangoli-help"></canvas>
+        <div class="brush-cursor" id="brush-cursor" aria-hidden="true"></div>
+      </div>
+      <p id="rangoli-help" class="visually-hidden">Draw with a finger, pen or mouse. With the keyboard: arrow keys move the brush, hold Shift to move faster, Space toggles drawing, Enter places a stamp or ring, plus and minus change the size, and Control+Z undoes. Escape closes the studio.</p>
+
+      <div class="studio-tools" role="toolbar" aria-label="Rangoli tools" aria-controls="rangoli-canvas">
+        <fieldset class="tool-group">
+          <legend>Tool</legend>
+          <div class="seg" role="radiogroup" aria-label="Tool" id="tool-group">
+            <button type="button" role="radio" aria-checked="true" data-tool="powder">Powder</button>
+            <button type="button" role="radio" aria-checked="false" data-tool="petal">Petal</button>
+            <button type="button" role="radio" aria-checked="false" data-tool="dots">Dots</button>
+            <button type="button" role="radio" aria-checked="false" data-tool="ring">Ring</button>
+            <button type="button" role="radio" aria-checked="false" data-tool="eraser">Eraser</button>
+          </div>
+        </fieldset>
+        <fieldset class="tool-group">
+          <legend>Colour</legend>
+          <div class="swatches" role="radiogroup" aria-label="Powder colour" id="swatches"></div>
+        </fieldset>
+        <div class="tool-row">
+          <label class="field-inline" for="sym-select">Symmetry
+            <select id="sym-select">
+              <option value="1">None</option>
+              <option value="4">4-fold</option>
+              <option value="6">6-fold</option>
+              <option value="8" selected>8-fold</option>
+              <option value="12">12-fold</option>
+              <option value="16">16-fold</option>
+            </select>
+          </label>
+          <label class="field-inline check" for="mirror-toggle"><input type="checkbox" id="mirror-toggle" checked> Mirror</label>
+          <label class="field-inline" for="floor-select">Floor
+            <select id="floor-select">
+              <option value="#5a2418">Red earth</option>
+              <option value="#1b1a2c" selected>Night stone</option>
+              <option value="#8f7a5c">Sandstone</option>
+              <option value="#2c3a2a">Cow-dung green</option>
+            </select>
+          </label>
+        </div>
+        <label class="field-range" for="size-range">Size <input type="range" id="size-range" min="3" max="48" value="12"></label>
+        <div class="tool-row actions">
+          <button type="button" class="btn btn-small" id="r-undo"><svg class="icon" aria-hidden="true"><use href="#i-undo"></use></svg>Undo</button>
+          <button type="button" class="btn btn-small" id="r-redo"><svg class="icon" aria-hidden="true"><use href="#i-redo"></use></svg>Redo</button>
+          <button type="button" class="btn btn-small" id="r-inspire"><svg class="icon" aria-hidden="true"><use href="#i-sparkle"></use></svg>Inspire me</button>
+          <button type="button" class="btn btn-small" id="r-clear"><svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>Clear</button>
+          <button type="button" class="btn btn-small" id="r-download"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>Download PNG</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <nav class="rail" id="rail" aria-label="Journey">
     <button class="icon-btn rail-step" id="rail-prev" type="button">
-      <svg class="icon" aria-hidden="true"><use href="#i-left"></use></svg><span class="visually-hidden">Previous</span>
+      <svg class="icon" aria-hidden="true"><use href="#i-up"></use></svg><span class="visually-hidden">Previous section</span>
     </button>
     <ol class="rail-list" id="rail-list">
       <li><a href="#/ignite" data-world-link="ignite"><span class="rail-num">01</span><span class="rail-label">First flame</span></a></li>
       <li><a href="#/story" data-world-link="story"><span class="rail-num">02</span><span class="rail-label">The story</span></a></li>
       <li><a href="#/meaning" data-world-link="meaning"><span class="rail-num">03</span><span class="rail-label">Meanings</span></a></li>
       <li><a href="#/rangoli" data-world-link="rangoli"><span class="rail-num">04</span><span class="rail-label">Rangoli</span></a></li>
-      <li><a href="#/wishes" data-world-link="wishes"><span class="rail-num">05</span><span class="rail-label">Wishes</span></a></li>
-      <li><a href="#/fireworks" data-world-link="fireworks"><span class="rail-num">06</span><span class="rail-label">Fireworks</span></a></li>
+      <li><a href="#/fireworks" data-world-link="fireworks"><span class="rail-num">05</span><span class="rail-label">Fireworks</span></a></li>
+      <li><a href="#/wishes" data-world-link="wishes"><span class="rail-num">06</span><span class="rail-label">Wishes</span></a></li>
       <li><a href="#/greetings" data-world-link="greetings"><span class="rail-num">07</span><span class="rail-label">Greetings</span></a></li>
     </ol>
     <button class="icon-btn rail-step" id="rail-next" type="button">
-      <svg class="icon" aria-hidden="true"><use href="#i-right"></use></svg><span class="visually-hidden">Next</span>
+      <svg class="icon" aria-hidden="true"><use href="#i-down"></use></svg><span class="visually-hidden">Next section</span>
     </button>
+    <span class="rail-progress" aria-hidden="true"><span id="rail-progress"></span></span>
   </nav>
 
   <!-- Dialogs -->
@@ -440,6 +448,7 @@
           <label><input type="radio" name="motion" value="reduced"> Reduced</label>
           <label><input type="radio" name="motion" value="full"> Full</label>
         </div>
+        <p class="fine">Reduced motion replaces camera flights with gentle fades.</p>
       </fieldset>
       <label class="field-range" for="volume-range">Sound volume <input type="range" id="volume-range" min="0" max="100" value="70"></label>
       <div class="install-box" id="install-box" hidden>
@@ -450,7 +459,7 @@
         <h3>Privacy</h3>
         <p class="fine">No accounts, no analytics, no tracking. Your rangoli and wishes are saved only in this browser. Greetings travel only inside the links or images you choose to share.</p>
         <h3>Keyboard</h3>
-        <p class="fine">Page Up / Page Down, or Alt + ← / →, move between worlds. Every control can be reached with Tab.</p>
+        <p class="fine">Scroll with the arrow keys, Page Up / Page Down or Space. Every control can be reached with Tab.</p>
       </div>
     </form>
   </dialog>
@@ -465,9 +474,9 @@
         <li><a href="#/ignite" data-world-link="ignite"><strong>The first flame</strong><span>Light a terracotta diya and wake the courtyard.</span></a></li>
         <li><a href="#/story" data-world-link="story"><strong>The way home</strong><span>The Ramayana homecoming, lamp by lamp.</span></a></li>
         <li><a href="#/meaning" data-world-link="meaning"><strong>What Diwali means</strong><span>Lakshmi Puja, Dhanteras, Jain, Sikh and regional traditions.</span></a></li>
-        <li><a href="#/rangoli" data-world-link="rangoli"><strong>Rangoli studio</strong><span>Draw with symmetry and download your design.</span></a></li>
-        <li><a href="#/wishes" data-world-link="wishes"><strong>Ocean of wishes</strong><span>Float a diya with a private wish.</span></a></li>
+        <li><a href="#/rangoli" data-world-link="rangoli"><strong>Rangoli</strong><span>Draw with symmetry and download your design.</span></a></li>
         <li><a href="#/fireworks" data-world-link="fireworks"><strong>Fireworks of light</strong><span>Launch, write with sparklers, and stage a finale.</span></a></li>
+        <li><a href="#/wishes" data-world-link="wishes"><strong>Ocean of wishes</strong><span>Float a diya with a private wish.</span></a></li>
         <li><a href="#/greetings" data-world-link="greetings"><strong>Greetings</strong><span>Make a card and a personal link to share.</span></a></li>
       </ol>
     </form>
@@ -481,7 +490,7 @@
       </div>
       <p class="wish-dialog-text" id="wish-dialog-text"></p>
       <p class="fine" id="wish-dialog-date"></p>
-      <div class="panel-actions">
+      <div class="card-actions">
         <button type="button" class="btn btn-small" id="wish-dialog-share"><svg class="icon" aria-hidden="true"><use href="#i-share"></use></svg>Share this wish</button>
       </div>
     </form>
@@ -502,8 +511,8 @@
       <symbol id="i-sound-on" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
       <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
       <symbol id="i-map" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
-      <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
-      <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
       <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
       <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
       <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
@@ -512,7 +521,6 @@
       <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
       <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
       <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
-      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
       <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
     </defs>
   </svg>

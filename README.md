@@ -1,21 +1,29 @@
 # Deepotsav · दीपोत्सव
 
 An immersive, mobile-first 3D Diwali experience. Light a floating terracotta
-diya with a touch, and its flame wakes an ancient palace courtyard. Then walk
-through seven worlds:
+diya with a touch, and its flame wakes an ancient palace courtyard. Then
+**scroll**: the whole journey is one continuous camera flight. Like Google
+Earth, the camera rises for an overview, travels while looking down on the
+courtyard, and descends into the next place. To reach the river it climbs into
+the night sky above the palace, dissolves, and comes down over the ghats.
+Lamps along the pool and the palace light up as you scroll through the story,
+and go dark again if you scroll back.
 
 | # | World | What you do |
 |---|-------|-------------|
 | I | **The first flame** | Touch the wick: the diya lights, settles on the pool, and light spreads through the courtyard. |
 | II | **The way home** | The Ramayana homecoming in four chapters; each chapter lights the next row of lamps, and the last lights the whole palace. |
-| III | **What Diwali means** | Lakshmi Puja, **Dhanteras** (Dhanvantari and the King Hima legend), Jain (Mahavira's nirvana), Sikh (Bandi Chhor Divas), the five days and regional customs. Each tab changes the light and the camera. |
-| IV | **Rangoli studio** | Draw with 1–16-fold symmetry in powder colours; it is laid onto the courtyard floor. Undo/redo, PNG download, keyboard drawing. |
-| V | **Ocean of wishes** | Float a diya with a wish across a river of thousands of lamps. Wishes stay on your device. |
-| VI | **Fireworks of light** | Tap the sky: peony, chrysanthemum, golden willow, lotus, ring, palm, crossette, anar, chakri, and a phuljhadi sparkler that writes with light. Grand finale. |
+| III | **What Diwali means** | Lakshmi Puja, **Dhanteras** (Dhanvantari and the King Hima legend), Jain (Mahavira's nirvana), Sikh (Bandi Chhor Divas), the five days and regional customs. Each one has its own place in the courtyard and its own light. |
+| IV | **Rangoli** | “Draw your rangoli” opens the studio over the journey: 1–16-fold symmetry in powder colours, laid onto the courtyard floor. Undo/redo, PNG download, keyboard drawing. |
+| V | **Fireworks of light** | A gentle show plays while you are here. Tap the sky: peony, chrysanthemum, golden willow, lotus, ring, palm, crossette, anar, chakri, and a phuljhadi sparkler that writes with light. Grand finale. |
+| VI | **Ocean of wishes** | Float a diya with a wish across a river of thousands of lamps. Wishes stay on your device. |
 | VII | **Greetings** | Make a card in 13 greetings (including Happy Dhanteras), download it, share it, or send a personal link that opens a diya for them to light. |
 
-Everything is procedural: there are no 3D model or texture downloads. The whole
-app is about **1.9 MB** before gzip and works offline after the first visit.
+The architecture and lamps are procedural. Surfaces use real photographed
+**CC0 textures from Poly Haven**: red sandstone walls and paving, marble and
+granite, with normal and roughness maps compressed to WebP (about 0.7 MB in
+total). The Low quality tier skips them and uses lightweight generated
+textures. The whole app works offline after the first visit.
 
 ---
 
@@ -46,6 +54,7 @@ Handy switches (add to the address):
 | `npm run check` | Parses every module, checks imports, manifest, precache list and element ids. |
 | `npm run release` | Rebuilds the service worker's file list and version. **Run before every deploy.** |
 | `npm run icons` | Regenerates app icons and the social preview image. |
+| `npm run textures` | Re-downloads the CC0 Poly Haven textures and compresses them to WebP in `assets/textures/`. |
 | `npm install && npm run vendor` | Re-copies three.js, GSAP and fonts from npm into `vendor/` (only when upgrading them). |
 
 ---
@@ -117,9 +126,22 @@ Key techniques:
 - **Flames.** A noise-driven teardrop shader with a blue root and white core.
   Distant flames resolve to points so they never vanish between pixels, and
   halos become bokeh discs when out of focus.
+- **Scroll director** (`js/core/scrollDirector.js`). The page scrolls
+  natively, so keyboard, screen readers and scroll-snap all work. Each section
+  names a shot. The smoothed scroll position becomes a fractional section
+  index, and the camera flies between shots on lifted Bézier arcs, resting at
+  each card. Scene changes dissolve at the top of the arc, scrubbed by the
+  scroll.
 - **Post-processing** (medium/high): HDR scene pass with depth of field and a
-  golden noise dissolve between scenes, bloom, vignette and grain, then
-  ACES tone mapping. A guard removes NaN pixels before bloom.
+  golden noise dissolve between scenes, bloom, vignette, ACES tone mapping,
+  then **SMAA** anti-aliasing. SMAA replaced multisampling, which cost about
+  30 ms a frame on integrated graphics. A guard removes NaN pixels before bloom.
+- **Image-based lighting.** A 360° snapshot of the courtyard *as currently
+  lit* becomes the environment light. Marble, oil, bronze and gold reflect the
+  real lamps, and stone gets warm bounce light. It refreshes when the lamps
+  change, only while the scroll is still.
+- **Depth pre-pass** for the big stone meshes, so hidden walls are not shaded
+  (it matters most in the aerial views).
 - **Water.** Analytic swell normals, Fresnel sky reflection, flame streaks laid
   on the surface, and a planar mirror on the high tier.
 - **Fireworks.** Every spark's flight (gravity plus drag) is solved in the vertex
@@ -138,13 +160,25 @@ Key techniques:
   camera flights, no parallax, and softer flashes.
 - Fireworks are limited to 3 launches a second, with flash brightness capped
   (photosensitive safety).
-- Keyboard: every control is reachable with Tab. Page Up/Down or Alt+←/→ move
-  between worlds. Tabs and option groups use arrow keys. In the rangoli
-  studio, arrows move the brush, Space draws and Enter stamps.
+- Keyboard: the journey scrolls with arrow keys, Page Up/Down and Space, and
+  every control is reachable with Tab. Option groups use arrow keys. In the
+  rangoli studio, arrows move the brush, Space draws, Enter stamps and Escape
+  closes it.
+- Reduced motion: no camera flights or parallax. Each move becomes a gentle
+  fade through indigo, scrubbed by the scroll.
 - Screen readers: semantic sections, a live region announces changes, focus
   moves to each world's heading, and canvases have text alternatives.
 - **Audio is opt-in**: nothing plays, and no AudioContext exists, until you
-  press the speaker button.
+  press the speaker button or “Play with sound”.
+- **Sound design.** Everything is synthesised from physical models, so there
+  are no audio files:
+  - a Karplus–Strong tanpura (Pa–Sa–Sa–low Sa, with a soft jawari buzz);
+  - santoor phrases in Raga Yaman;
+  - temple bells from modal synthesis;
+  - crickets and a far-off ladi of crackers;
+  - river water;
+  - fireworks;
+  - a courtyard reverb.
 
 ### Privacy
 
@@ -171,14 +205,14 @@ confirmed from a panchang.
 
 - [x] Realistic floating terracotta diya (lathe with spout, hand-made wobble, painted band, oil, cotton wick), lit by touch, click or keyboard
 - [x] Ancient palace courtyard: cusped marble arches, jaali, jharokhas, chhajjas, kanguras, chhatris, domed facade, reflecting pool, deepastambhas, garlands, akash kandils
-- [x] Seven worlds with camera choreography and a golden dissolve between scenes
+- [x] One continuous scroll journey through seven parts, with Google-Earth-style camera flights and a golden dissolve between palace and river
 - [x] Flame shader and embers, bloom, shadows (gate lantern spot), reflections, depth of field and sprite bokeh, light beams, dust in the light
 - [x] Respectful content: Ramayana homecoming, Lakshmi Puja, **Dhanteras and its story**, Jain, Sikh, five days, regional diversity
 - [x] Rangoli studio: symmetry, mirror, 10 powder colours, powder/petal/dots/ring/eraser, undo/redo, Inspire, autosave, PNG export, courtyard view
 - [x] Ocean of floating diyas: thousands of instanced lamps, private wishes, tap to read, share sheet only on your request
 - [x] Interactive fireworks: 7 shells, anar, chakri, sparkler, finale, water reflections, synthesised sound
 - [x] Greeting editor: 13 languages and scripts (incl. Happy Dhanteras), 4 styles, 3 accents, download, native share, personal link
-- [x] Opt-in Web Audio: tanpura drone, temple bells, match strike, water, fireworks
+- [x] Opt-in Web Audio from physical models: plucked tanpura, santoor in Raga Yaman, temple bells, crickets, distant crackers, water, fireworks
 - [x] PWA: manifest, icons (incl. maskable), service worker precache, offline page, install button, update prompt
 - [x] Quality tiers, adaptive resolution, visibility pause, lazy loading, reduced motion, 2D fallback, context-loss handling
 - [x] Responsive from 320px, touch-first, keyboard and screen-reader friendly
@@ -192,12 +226,13 @@ confirmed from a panchang.
 - Frame-rate figures could not be measured reliably in the test browser, so
   real-device performance should be checked. The adaptive monitor lowers
   resolution automatically if needed.
-- Sound was not heard during testing (it needs a person to press play).
+- Sound was built and played without errors in testing, but it has not been *listened to*. How it sounds needs a human ear.
 - The courtyard and river are stylised, procedural architecture, not
   photogrammetry.
 
 ## Licences
 
 Code: yours. Third-party files are in `vendor/LICENSES/`: three.js (MIT),
-GSAP (standard "no charge" licence), and Cormorant Garamond and Mukta (SIL Open
-Font License).
+GSAP (standard "no charge" licence), Cormorant Garamond and Mukta (SIL Open
+Font License), and the Poly Haven textures (CC0, credited in
+`polyhaven-textures-CC0.txt`).

@@ -3,6 +3,22 @@
 // all generated here, which keeps the app small and fully offline.
 import * as THREE from '../lib/three.js';
 
+/**
+ * Real PBR texture set (CC0, Poly Haven) compressed to WebP in
+ * assets/textures: colour, OpenGL normal map and ARM (AO / roughness / metal).
+ */
+export async function loadPBR(name, { aniso = 8, maps = ['color', 'normal', 'arm'] } = {}) {
+  const loader = new THREE.TextureLoader();
+  const entries = await Promise.all(maps.map(async (m) => {
+    const tex = await loader.loadAsync(`assets/textures/${name}_${m}.webp`);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = aniso;
+    if (m === 'color') tex.colorSpace = THREE.SRGBColorSpace;
+    return [m, tex];
+  }));
+  return Object.fromEntries(entries);
+}
+
 /** Tileable value noise with integer period. */
 function makeNoise(seed = 1) {
   const hash = (x, y) => {

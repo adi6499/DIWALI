@@ -18,6 +18,9 @@ import { CameraRig } from '../core/cameraRig.js';
 export const RIVER_SHOTS = {
   river: { pos: [0, 2.7, 9.8], target: [0, 0.9, -60], fov: 50, aperture: 0.35, focus: 14 },
   release: { pos: [0.3, 1.75, 7.0], target: [0, 0.05, -8], fov: 46, aperture: 0.4, focus: 7 },
+  riverGreeting: { pos: [2.4, 1.9, 7.6], target: [-1.2, 0.3, -12], fov: 48, aperture: 0.3, focus: 10 },
+  riverEnd: { pos: [0, 10, 26], target: [0, 1.5, -140], fov: 52, aperture: 0 },
+  aerial: { pos: [0, 62, 46], target: [0, 0, -90], fov: 56, aperture: 0 },
 };
 
 const waveH = (x, z, t) => 0.045 * Math.sin(x * 0.35 + t * 0.9) + 0.035 * Math.sin(z * 0.52 - t * 1.1 + x * 0.21) + 0.018 * Math.sin((x + z) * 0.95 + t * 1.7);
@@ -30,6 +33,7 @@ export async function createRiverScene({ engine, tier }) {
   const low = tier.name === 'low';
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x080a1f, 0.0042);
+  scene.userData.prepass = true;
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 1500);
   const rig = new CameraRig(camera);
   rig.set(RIVER_SHOTS.river);
@@ -58,6 +62,7 @@ export async function createRiverScene({ engine, tier }) {
   const ghatGeo = mergeGeometries(parts.map((p) => { p.deleteAttribute('uv'); return p; }), false);
   worldUV(ghatGeo, 0.5);
   const ghat = new THREE.Mesh(ghatGeo, stone);
+  ghat.layers.enable(1);
   scene.add(ghat);
 
   // ghat lamps on step edges + pavilions
@@ -121,6 +126,7 @@ export async function createRiverScene({ engine, tier }) {
   for (const y of [0.4, 1.4, 2.6]) lampLine(-340, 340, y, shoreZ + 6, 1.2 / Math.max(0.5, dens));
   const skyGeo = mergeGeometries(skyline.map((g) => { g.deleteAttribute('uv'); return g; }), false);
   const skylineMesh = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ color: 0x0b0914 }));
+  skylineMesh.layers.enable(1);
   scene.add(skylineMesh);
 
   // --- floating diyas ---------------------------------------------------------
@@ -262,9 +268,9 @@ export async function createRiverScene({ engine, tier }) {
     name: 'river',
     scene,
     camera,
-    exposure: 1.05,
-    vignette: 0.55,
-    bloom: { strength: 1.0, radius: 0.7, threshold: 0.78 },
+    exposure: 0.95,
+    vignette: 0.5,
+    bloom: { strength: 0.75, radius: 0.5, threshold: 0.9 },
     dof: () => ({ focus: rig.focus, aperture: rig.aperture }),
     resize: (w, h) => rig.resize(w, h),
     update(dt, t) {

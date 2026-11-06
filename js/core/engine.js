@@ -71,12 +71,14 @@ void main() {
   vec3 a = safe(sceneA(vUv));
   if (uBlending < 0.5) { gl_FragColor = vec4(a, 1.0); return; }
   vec3 b = safe(texture2D(tB, vUv).rgb);
-  float n = fbm3(vUv * vec2(uRes.x / uRes.y, 1.0) * 3.0 + 4.0) * 1.1;
-  float t = uMix * 1.25 - 0.12;
-  float k = smoothstep(n - 0.07, n + 0.07, t);
+  // Noise dissolve with a thin seam of warm light along the edge. It must
+  // look good held at any point, since the scroll can stop mid-way.
+  float n = fbm3(vUv * vec2(uRes.x / uRes.y, 1.0) * 4.0 + 4.0) * 1.1;
+  float t = uMix * 1.2 - 0.1;
+  float k = smoothstep(n - 0.035, n + 0.035, t);
   vec3 c = mix(a, b, k);
   float edge = 1.0 - abs(k * 2.0 - 1.0);
-  c += vec3(1.0, 0.62, 0.25) * edge * 2.2;
+  c += vec3(1.0, 0.6, 0.25) * edge * edge * edge * 0.8;
   gl_FragColor = vec4(c, 1.0);
 }
 `;
@@ -171,12 +173,13 @@ export class Engine {
   async initPost() {
     if (!this.tier.post) return;
     try {
-      const [{ EffectComposer }, { UnrealBloomPass }, { OutputPass }, { ShaderPass }, { Pass, FullScreenQuad }] = await Promise.all([
+      const [{ EffectComposer }, { UnrealBloomPass }, { OutputPass }, { ShaderPass }, { Pass, FullScreenQuad }, { SMAAPass }] = await Promise.all([
         import('../../vendor/three/addons/postprocessing/EffectComposer.js'),
         import('../../vendor/three/addons/postprocessing/UnrealBloomPass.js'),
         import('../../vendor/three/addons/postprocessing/OutputPass.js'),
         import('../../vendor/three/addons/postprocessing/ShaderPass.js'),
         import('../../vendor/three/addons/postprocessing/Pass.js'),
+        import('../../vendor/three/addons/postprocessing/SMAAPass.js'),
       ]);
       const engine = this;
       const tier = this.tier;
@@ -217,7 +220,7 @@ export class Engine {
           const u = this.material.uniforms;
           renderer.setRenderTarget(this.rtA);
           renderer.clear();
-          if (a) renderer.render(a.scene, a.camera);
+          if (a) engine.renderScene(a.scene, a.camera);
           u.tA.value = this.rtA.texture;
           u.tDepth.value = this.rtA.depthTexture;
           if (a) {
@@ -233,7 +236,7 @@ export class Engine {
             }
             renderer.setRenderTarget(this.rtB);
             renderer.clear();
-            renderer.render(b.scene, b.camera);
+            engine.renderScene(b.scene, b.camera);
             u.tB.value = this.rtB.texture;
             u.uBlending.value = 1;
             u.uMix.value = engine.blend;
@@ -253,16 +256,11 @@ export class Engine {
 
       if (tier.bloom) {
         this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.85, 0.55, 0.9);
-        // Medium tier blooms at a lower internal resolution
-        if (tier.name !== 'high') {
-          const base = this.bloom.setSize.bind(this.bloom);
-          this.bloom.setSize = (w, h) => base(Math.max(2, w * 0.6), Math.max(2, h * 0.6));
-        }
         composer.addPass(this.bloom);
       }
       this.grade = new ShaderPass({
         uniforms: {
-          tDiffuse: { value: null }, uVignette: { value: 0.55 }, uGrain: { value: 0.035 },
+          tDiffuse: { value: null }, uVignette: { value: 0.55 }, uGrain: { value: 0.0 },
           uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
         },
         vertexShader: FSQ_VERT.replace('gl_Position = vec4(position.xy, 0.0, 1.0);', 'gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);'),
@@ -270,6 +268,13 @@ export class Engine {
       });
       composer.addPass(this.grade);
       composer.addPass(new OutputPass());
+      // SMAA on the final (display-space) image: clean edges for a fraction of
+      // the cost of multisampling an HDR target, which is very slow on
+      // integrated GPUs.
+      if (tier.smaa) {
+        this.smaa = new SMAAPass(1, 1);
+        composer.addPass(this.smaa);
+      }
       this.composer = composer;
       this.resize();
     } catch (err) {
@@ -324,6 +329,66 @@ export class Engine {
         },
       });
     });
+  }
+
+  /**
+   * Scroll-scrubbed blend: show scene `a`, dissolving into `b` by t (0..1).
+   * Without post-processing it cuts at the midpoint (the caller fades the
+   * curtain over the cut).
+   */
+  setBlend(a, b, t) {
+    if (a && !this.handles.has(a)) this.register(a);
+    if (b && !this.handles.has(b)) this.register(b);
+    const show = (h) => {
+      if (this.active !== h) { this.active = h; this._applyLook(h); this.monitor.reset(0.5); }
+      this.incoming = null;
+      this.blend = 0;
+    };
+    if (!b || t <= 0.002) return show(a);
+    if (t >= 0.998) return show(b);
+    if (!this.composer) return show(t < 0.5 ? a : b);
+    if (this.active !== a) { this.active = a; this.monitor.reset(0.5); }
+    this.incoming = b;
+    this.blend = t;
+    this._applyLook(t > 0.5 ? b : a);
+  }
+
+  /** Opacity of the indigo curtain (0..1), driven directly by the scroll. */
+  setCurtain(v) {
+    const c = this._curtainEl || (this._curtainEl = document.getElementById('curtain'));
+    if (!c) return;
+    const o = Math.max(0, Math.min(1, v));
+    if (o === this._curtainV) return;
+    this._curtainV = o;
+    c.style.transition = 'none';
+    c.style.opacity = o.toFixed(3);
+  }
+
+  /**
+   * Draw a scene with a depth-only pre-pass for the big opaque meshes (objects
+   * on layer 1). Hidden walls are then rejected by the depth test before they
+   * are shaded, so each pixel of stone is lit once instead of several times.
+   */
+  renderScene(scene, camera) {
+    const r = this.renderer;
+    if (!scene.userData.prepass) { r.render(scene, camera); return; }
+    if (!this._depthMat) {
+      this._depthMat = new THREE.MeshBasicMaterial({ colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    }
+    const autoClear = r.autoClear;
+    const autoShadow = r.shadowMap.autoUpdate;
+    r.clear();
+    r.autoClear = false;
+    r.shadowMap.autoUpdate = false;
+    const mask = camera.layers.mask;
+    camera.layers.set(1);
+    scene.overrideMaterial = this._depthMat;
+    r.render(scene, camera);
+    scene.overrideMaterial = null;
+    camera.layers.mask = mask;
+    r.shadowMap.autoUpdate = autoShadow;
+    r.render(scene, camera);
+    r.autoClear = autoClear;
   }
 
   _curtainSwap(handle, seconds) {
@@ -394,7 +459,7 @@ export class Engine {
       if (this.grade) this.grade.uniforms.uTime.value = this.time;
       this.composer.render(dt);
     } else {
-      this.renderer.render(this.active.scene, this.active.camera);
+      this.renderScene(this.active.scene, this.active.camera);
     }
   }
 
@@ -428,7 +493,8 @@ export class Engine {
       this.scenePass.material.needsUpdate = true;
       this.scenePass.material.uniforms.uAperture.value = 0;
     }
-    this.basePR = Math.min(this.basePR, 1);
+    // stay crisp: never fall below 1.25× on high-density screens
+    this.basePR = Math.min(this.basePR, Math.max(1, Math.min(1.25, window.devicePixelRatio || 1)));
     this.resize();
   }
 

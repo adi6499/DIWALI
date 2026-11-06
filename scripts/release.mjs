@@ -23,7 +23,8 @@ async function walk(dir) {
 }
 
 const files = [...INCLUDE_FILES.map((f) => join(root, f))];
-for (const d of INCLUDE_DIRS) files.push(...(await walk(join(root, d))));
+// Textures are cached on first use instead: low-end phones never load them.
+for (const d of INCLUDE_DIRS) files.push(...(await walk(join(root, d))).filter((f) => !/[\\/]assets[\\/]textures[\\/]/.test(f)));
 const hash = createHash('sha256');
 let bytes = 0;
 for (const f of files.sort()) {

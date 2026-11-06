@@ -123,14 +123,15 @@ export function createHeroDiya({ groupU, tier, reflect = null }) {
   const flame = new LampField({
     groupU, bodies: false, hero: true, capacity: 1, flameH: 0.034, haloSize: 0.075, maxCoc: tier.maxCoc, reflect,
   });
-  flame.u.uIntensity.value = 1.15;
-  flame.u.uHaloIntensity.value = 0.45;
+  flame.u.uIntensity.value = 1.05;
+  flame.u.uHaloIntensity.value = 0.3;
   flame.add({ pos: [0, 0, 0], scale: 1, group: G.HERO, key: 0.5, seed: 0.37 });
   flame.build();
 
   // Real light for speculars on the oil and the clay
   const light = new THREE.PointLight(0xff9440, 0, 0, 2);
-  light.position.copy(tip).add(new THREE.Vector3(-0.004, 0.016, 0));
+  // just inside the flame, slightly toward the bowl, so the oil and inner wall catch it
+  light.position.copy(tip).add(new THREE.Vector3(-0.012, 0.014, 0));
   group.add(light);
 
   // Starlight: a cool rim and a soft key so the unlit diya reads in the dark.
@@ -186,7 +187,7 @@ export function createHeroDiya({ groupU, tier, reflect = null }) {
       worldTip.copy(tip).applyMatrix4(group.matrixWorld);
       flame.setPosition(0, worldTip.x, worldTip.y, worldTip.z);
       const flick = 0.86 + 0.08 * Math.sin(t * 13.3) * Math.sin(t * 7.1) + 0.06 * Math.sin(t * 23.0 + 1.0);
-      light.intensity = lightState.v * 0.028 * flick;
+      light.intensity = lightState.v * 0.075 * flick;
       rim.intensity = 0.12 * (1 - lightState.v);
       key.intensity = 0.07 * (1 - lightState.v);
       // embers

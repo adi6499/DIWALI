@@ -9,7 +9,7 @@
  */
 
 /* RELEASE:START */
-const VERSION = 'deepotsav-1.0.0-d4709412c2';
+const VERSION = 'deepotsav-1.0.0-2ce4601b85';
 const PRECACHE = [
   './',
   './assets/fonts/cormorant-500-italic.woff2',
@@ -42,6 +42,11 @@ const PRECACHE = [
   './js/core/storage.js',
   './js/core/store.js',
   './js/core/ui.js',
+  './js/explore/blessing.js',
+  './js/explore/hunt.js',
+  './js/explore/index.js',
+  './js/explore/journal.js',
+  './js/explore/lamps.js',
   './js/fallback/fallback2d.js',
   './js/gfx/chunks.js',
   './js/gfx/fireworks.js',
@@ -56,6 +61,8 @@ const PRECACHE = [
   './js/greetings/card.js',
   './js/greetings/link.js',
   './js/greetings/presets.js',
+  './js/i18n/en.js',
+  './js/i18n/index.js',
   './js/lib/gsap.js',
   './js/lib/three.js',
   './js/main.js',

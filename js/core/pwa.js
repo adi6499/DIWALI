@@ -1,5 +1,6 @@
 // Service worker registration, update prompt and install button.
 import { toast } from './ui.js';
+import { t, onLangChange } from '../i18n/index.js';
 
 let deferredPrompt = null;
 
@@ -19,13 +20,16 @@ export function initPWA() {
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     if (box) box.hidden = true;
-    toast('Deepotsav is installed.');
+    toast(t('pwa.installed'));
   });
 
   if (isIOS && !standalone && box && text && btn) {
     // iOS has no install prompt API; explain the manual step instead.
     box.hidden = false;
-    text.textContent = 'To install on iPhone or iPad: tap Share, then “Add to Home Screen”.';
+    text.removeAttribute('data-i18n');
+    const say = () => { text.textContent = t('pwa.ios'); };
+    say();
+    onLangChange(say);
     btn.hidden = true;
   }
 
@@ -55,9 +59,9 @@ function registerSW() {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
       const offerUpdate = (worker) => {
-        toast('A new version of Deepotsav is ready.', {
+        toast(t('pwa.update'), {
           timeout: 0,
-          action: { label: 'Refresh', onClick: () => worker.postMessage('skip-waiting') },
+          action: { label: t('pwa.refresh'), onClick: () => worker.postMessage('skip-waiting') },
         });
       };
       if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);

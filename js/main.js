@@ -12,6 +12,8 @@ import { toast, openDialog, closeDialog } from './core/ui.js';
 import { initPWA } from './core/pwa.js';
 import { ScrollDirector } from './core/scrollDirector.js';
 import { decodeGreeting } from './greetings/link.js';
+import * as i18n from './i18n/index.js';
+import { t } from './i18n/index.js';
 import * as THREE from './lib/three.js';
 
 const $ = (s) => document.querySelector(s);
@@ -40,6 +42,9 @@ const loader = {
   },
 };
 
+let probe = null;
+let soundOn = false;
+
 // --- shared context handed to every part -------------------------------------------
 const frameFns = new Set();
 let riverPromise = null;
@@ -56,6 +61,7 @@ const ctx = {
   tier: null,
   greeting: null,
   director: null,
+  explore: null,
   announce,
   toast,
   get reduced() { return isReducedMotion(store.get().motion); },
@@ -85,8 +91,9 @@ const ctx = {
     if (audio.enabled) return true;
     const ok = await audio.enable();
     setSoundUI(ok);
-    announce(ok ? 'Sound on: tanpura, santoor and temple bells.' : 'Sound could not start on this device.');
-    if (!ok) toast('Sound could not start on this device.');
+    announce(ok ? t('sound.on') : t('sound.fail'));
+    if (!ok) toast(t('sound.fail'));
+    else ctx.explore?.mark('sound');
     $('#sound-chip').hidden = true;
     return ok;
   },
@@ -134,10 +141,11 @@ const ctx = {
 
 // --- chrome --------------------------------------------------------------------------
 function setSoundUI(on) {
+  soundOn = on;
   const soundBtn = $('#sound-btn');
   soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   soundBtn.querySelector('use').setAttribute('href', on ? '#i-sound-on' : '#i-sound-off');
-  $('#sound-label').textContent = on ? 'Turn sound off' : 'Turn sound on';
+  $('#sound-label').textContent = on ? t('sound.turnOff') : t('sound.turnOn');
 }
 
 function wireChrome() {
@@ -165,7 +173,9 @@ function wireChrome() {
   $('#brand-btn').addEventListener('click', (e) => openDialog(mapDialog, e.currentTarget));
   const settings = $('#settings-dialog');
   $('#settings-btn').addEventListener('click', (e) => openDialog(settings, e.currentTarget));
-  for (const d of [mapDialog, settings, $('#wish-dialog')]) {
+  $('#journal-btn').addEventListener('click', (e) => ctx.explore?.open(e.currentTarget));
+  wireLanguages();
+  for (const d of [mapDialog, settings, $('#wish-dialog'), $('#lang-dialog')]) {
     d.addEventListener('click', (e) => { if (e.target === d) closeDialog(d); });
   }
 
@@ -176,7 +186,7 @@ function wireChrome() {
     if (audio.enabled) {
       audio.disable();
       setSoundUI(false);
-      announce('Sound off.');
+      announce(t('sound.off'));
     } else {
       await ctx.enableSound();
     }
@@ -195,7 +205,7 @@ function wireChrome() {
     r.addEventListener('change', () => {
       if (!r.checked) return;
       store.set({ quality: r.value });
-      toast('Quality will change when the page reloads.', { action: { label: 'Reload now', onClick: () => location.reload() } });
+      toast(t('quality.reload'), { action: { label: t('quality.reloadNow'), onClick: () => location.reload() } });
     });
   }
 
@@ -207,6 +217,67 @@ function wireChrome() {
   onSystemMotionChange(applyMotion);
 
   document.addEventListener('visibilitychange', () => audio.setPaused(document.hidden));
+}
+
+// --- languages ------------------------------------------------------------------------
+const startLang = i18n.current;
+let firstLang = null;
+
+function wireLanguages() {
+  const dialog = $('#lang-dialog');
+  const list = $('#lang-list');
+  for (const l of i18n.LANGS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lang-option';
+    b.setAttribute('role', 'radio');
+    b.dataset.lang = l.code;
+    b.lang = l.code;
+    b.innerHTML = `<span class="lang-native"></span><span class="lang-english" lang="en"></span>`;
+    b.querySelector('.lang-native').textContent = l.name;
+    b.querySelector('.lang-english').textContent = l.english;
+    b.addEventListener('click', async () => {
+      closeDialog(dialog);
+      if (l.code === i18n.current()) return;
+      await i18n.setLang(l.code);
+      announce(t('lang.changed', { name: l.name }));
+    });
+    list.append(b);
+  }
+  const open = (e) => {
+    for (const b of list.children) b.setAttribute('aria-checked', b.dataset.lang === i18n.current() ? 'true' : 'false');
+    openDialog(dialog, e.currentTarget);
+    list.querySelector('[aria-checked="true"]')?.focus();
+  };
+  $('#lang-btn').addEventListener('click', open);
+  $('#settings-lang').addEventListener('click', (e) => { closeDialog($('#settings-dialog')); open(e); });
+  i18n.onLangChange(onLanguage);
+  onLanguage();
+}
+
+/** Everything written by scripts that has to follow the language. */
+function onLanguage() {
+  const info = i18n.langInfo();
+  $('#lang-label').textContent = t('lang.button', { name: info.name });
+  $('#settings-lang-name').textContent = info.name;
+  $('#settings-lang-name').lang = info.code;
+  setSoundUI(soundOn);
+  sayQuality();
+  const g = ctx.director?.group;
+  document.title = !g || g === 'ignite' ? t('doc.title') : t('doc.part', { title: t(`world.${g}`) });
+  if (firstLang === null) firstLang = startLang();
+  else if (info.code !== firstLang) ctx.explore?.mark('language');
+  // cards change height with the language: the camera's resting points move too
+  if (ctx.director) requestAnimationFrame(() => ctx.director.measure());
+}
+
+function sayQuality() {
+  if (!probe || !ctx.tier) return;
+  $('#quality-note').textContent = t('quality.detected', {
+    probe: t(`quality.${probe.tier}`),
+    reason: probe.reason || t('quality.unknown'),
+    tier: t(`quality.${ctx.tier.name}`),
+  });
 }
 
 function applyMotion() {
@@ -249,6 +320,8 @@ function wireStage(canvas) {
   canvas.addEventListener('pointerup', (e) => {
     current()?.onPointerUp?.(e, e.clientX, e.clientY);
     if (down && down.id === e.pointerId && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 12 && performance.now() - down.t < 600) {
+      // a lamp to light or a hidden thing comes first
+      if (!canvas.classList.contains('is-drawing') && ctx.explore?.onTap(e.clientX, e.clientY)) { down = null; return; }
       current()?.onTap?.(e, e.clientX, e.clientY);
     }
     down = null;
@@ -267,24 +340,25 @@ async function startFallback(reason) {
   ctx.fallback = createFallback(stage, { reduced: ctx.reduced });
   ctx.fallback.start();
   wireStage(stage);
-  if (reason) toast(`Showing the 2D version (${reason}).`, { timeout: 6000 });
+  if (reason) toast(t('fallback.shown', { reason }), { timeout: 6000 });
 }
 
 async function boot() {
   history.scrollRestoration = 'manual';
-  wireChrome();
-  initPWA();
-  loader.set('Shaping the clay…', 0.08);
-  const probe = probeDevice();
+  // the language first, so even the loader speaks it
+  try { await i18n.init(); } catch (err) { console.warn('[deepotsav] language', err); }
+  loader.set(t('loader.clay'), 0.08);
+  probe = probeDevice();
   const tier = resolveTier(store.get().quality, probe);
   ctx.tier = tier;
-  $('#quality-note').textContent = `Detected: ${probe.tier} (${probe.reason || 'unknown device'}). Using ${tier.name}.`;
+  wireChrome();
+  initPWA();
   document.documentElement.dataset.tier = tier.name;
 
   const force2D = /[?&]2d\b/.test(location.search);
   if (probe.webgl2 && !force2D) {
     try {
-      loader.set('Kneading the terracotta…', 0.16);
+      loader.set(t('loader.knead'), 0.16);
       const [{ Engine }, { createPalaceScene }, { gsap }] = await Promise.all([
         import('./core/engine.js'),
         import('./scenes/palaceScene.js'),
@@ -292,8 +366,8 @@ async function boot() {
       ]);
       const canvas = $('#stage');
       const engine = new Engine(canvas, tier, {
-        onContextLost: () => toast('The graphics card paused. Restoring…', { timeout: 3000 }),
-        onContextRestored: () => toast('Restored.', { timeout: 1500 }),
+        onContextLost: () => toast(t('gl.lost'), { timeout: 3000 }),
+        onContextRestored: () => toast(t('gl.restored'), { timeout: 1500 }),
         onDegrade: () => { engine.degrade(); console.info('[deepotsav] lowering effects for smoother frames'); },
       });
       await engine.initPost();
@@ -310,10 +384,10 @@ async function boot() {
       console.error('[deepotsav] 3D unavailable, using 2D fallback', err);
       ctx.engine?.stop?.();
       ctx.engine = null;
-      await startFallback('3D graphics could not start');
+      await startFallback(t('fallback.no3d'));
     }
   } else {
-    await startFallback(force2D ? '' : 'WebGL 2 is not available');
+    await startFallback(force2D ? '' : t('fallback.noWebgl'));
   }
   applyMotion();
 
@@ -340,12 +414,22 @@ async function boot() {
     Promise.resolve(controllers[g]?.enter()).catch((err) => console.error(err));
     updateRail(g);
     if (prev) {
-      const w = WORLDS.find((x) => x.id === g);
-      announce(`${w.title}. Part ${GROUPS.indexOf(g) + 1} of ${GROUPS.length}.`);
-      document.title = g === 'ignite' ? 'Deepotsav — A Festival of Light' : `${w.title} · Deepotsav`;
+      const title = t(`world.${g}`);
+      announce(t('a11y.part', { title, n: GROUPS.indexOf(g) + 1, total: GROUPS.length }));
+      document.title = g === 'ignite' ? t('doc.title') : t('doc.part', { title });
       if (!ctx.greeting) history.replaceState(null, '', `${location.pathname}${location.search}#/${g}`);
     }
   };
+
+  director.onSection = (i) => ctx.explore?.onSection(director.sections[i]);
+
+  // Lamps to light, hidden things, the blessing and the journal
+  try {
+    const { createExplore } = await import('./explore/index.js');
+    ctx.explore = await createExplore(ctx);
+  } catch (err) {
+    console.error('[deepotsav] explore failed', err);
+  }
 
   const tick = (dt) => {
     director.update(dt);
@@ -403,5 +487,5 @@ window.addEventListener('unhandledrejection', (e) => console.error('[deepotsav] 
 
 boot().catch((err) => {
   console.error('[deepotsav] boot failed', err);
-  loader.set('Something went wrong. Please reload the page.', 1);
+  loader.set(t('loader.error'), 1);
 });

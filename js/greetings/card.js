@@ -347,9 +347,10 @@ export function drawCard(canvas, g, assets = {}) {
   y += 78;
 
   if (g.to) {
-    ctx.font = `500 46px ${SERIF}`;
+    const dear = (preset.dear || 'Dear {to},').replace('{to}', g.to);
+    ctx.font = /[ऀ-෿਀-੿]/.test(dear) ? `500 40px ${SCRIPT_FONT}` : `500 46px ${SERIF}`;
     ctx.fillStyle = '#f4ecdb';
-    ctx.fillText(`Dear ${g.to},`, W / 2, y);
+    ctx.fillText(dear, W / 2, y);
     y += 62;
   }
   const msg = (g.message || preset.message || '').trim();

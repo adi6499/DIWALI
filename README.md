@@ -19,6 +19,17 @@ and go dark again if you scroll back.
 | VI | **Ocean of wishes** | Float a diya with a wish across a river of thousands of lamps. Wishes stay on your device. |
 | VII | **Greetings** | Make a card in 13 greetings (including Happy Dhanteras), download it, share it, or send a personal link that opens a diya for them to light. |
 
+**Explore as you go.** Thirty dark clay diyas frame the rangoli: tap them to
+light them yourself (each row plays a rising scale, a finished row flares). Five
+small things hide around the courtyard (Lakshmi's owl, Ganesha's mouse, a
+peacock, a cow and a conch), each with its story. A golden diya at the end
+gives a blessing for the day. The **journal** (book icon in the top bar)
+tracks all 17 discoveries, with hints, on this device only.
+
+**Ten languages.** English, हिन्दी, मराठी, ગુજરાતી, বাংলা, தமிழ், తెలుగు, ಕನ್ನಡ,
+മലയാളം and ਪੰਜਾਬੀ, from the language button in the top bar or in Settings. The
+browser's language is picked automatically on a first visit.
+
 The architecture and lamps are procedural. Surfaces use real photographed
 **CC0 textures from Poly Haven**: red sandstone walls and paving, marble and
 granite, with normal and roughness maps compressed to WebP (about 0.7 MB in
@@ -53,6 +64,8 @@ Handy switches (add to the address):
 | `npm start` | Local server on port 5173 (`PORT=8080 npm start` to change). |
 | `npm run check` | Parses every module, checks imports, manifest, precache list and element ids. |
 | `npm run release` | Rebuilds the service worker's file list and version. **Run before every deploy.** |
+| `node scripts/i18n.mjs source` | Writes every English text (page and scripts) to `scripts/i18n-source.en.json` for translators. |
+| `node scripts/i18n.mjs check` | Every language has every text, with the same `{placeholders}` and inline tags (also part of `npm run check`). |
 | `npm run icons` | Regenerates app icons and the social preview image. |
 | `npm run textures` | Re-downloads the CC0 Poly Haven textures and compresses them to WebP in `assets/textures/`. |
 | `npm install && npm run vendor` | Re-copies three.js, GSAP and fonts from npm into `vendor/` (only when upgrading them). |
@@ -192,6 +205,18 @@ Content-Security-Policy in `index.html`. The wish form then shows an
 **unticked** consent box. Only wishes whose author ticks it are sent, as
 `{ text, lang, created }`.
 
+### Languages
+
+The page's own English is written in `index.html`; elements carry
+`data-i18n="key"` (their content) or `data-i18n-attr="placeholder:key"`.
+English made by scripts is in `js/i18n/en.js`; scripts call `t('key', {vars})`.
+Each other language is one file, `js/i18n/<code>.js`, loaded only when chosen
+(and cached for offline use after that). Missing texts fall back to English.
+To change wording, edit the English, run `node scripts/i18n.mjs source`, and
+update the same keys in each language file; `npm run check` lists anything
+missing. The translations were written with care but have not yet been reviewed
+by native speakers.
+
 ### Festival days
 
 `FESTIVAL_DAYS` in `js/config.js` shows a greeting on the opening screen on the
@@ -216,6 +241,8 @@ confirmed from a panchang.
 - [x] PWA: manifest, icons (incl. maskable), service worker precache, offline page, install button, update prompt
 - [x] Quality tiers, adaptive resolution, visibility pause, lazy loading, reduced motion, 2D fallback, context-loss handling
 - [x] Responsive from 320px, touch-first, keyboard and screen-reader friendly
+- [x] Ten languages with a picker, auto-detected on the first visit; greetings follow the page language
+- [x] Explore: 30 diyas to light by hand, five hidden things with stories and hints, a blessing of the day, and a journal of 17 discoveries
 
 ## Known limitations
 

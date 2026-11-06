@@ -4,16 +4,16 @@
 // shared with the studio so generated and hand-drawn designs look alike.
 
 export const POWDERS = [
-  { name: 'Kumkum red', hex: '#c8102e' },
-  { name: 'Sindoor orange', hex: '#e85d04' },
-  { name: 'Marigold', hex: '#ff9a1f' },
-  { name: 'Haldi yellow', hex: '#f6c026' },
-  { name: 'Rose pink', hex: '#e0559b' },
-  { name: 'Peacock blue', hex: '#0a7a8f' },
-  { name: 'Indigo', hex: '#4a3aa8' },
-  { name: 'Leaf green', hex: '#2f9a52' },
-  { name: 'Rice white', hex: '#f6efe0' },
-  { name: 'Gold dust', hex: '#d9b25f' },
+  { id: 'kumkum', name: 'Kumkum red', hex: '#c8102e' },
+  { id: 'sindoor', name: 'Sindoor orange', hex: '#e85d04' },
+  { id: 'marigold', name: 'Marigold', hex: '#ff9a1f' },
+  { id: 'haldi', name: 'Haldi yellow', hex: '#f6c026' },
+  { id: 'rose', name: 'Rose pink', hex: '#e0559b' },
+  { id: 'peacock', name: 'Peacock blue', hex: '#0a7a8f' },
+  { id: 'indigo', name: 'Indigo', hex: '#4a3aa8' },
+  { id: 'leaf', name: 'Leaf green', hex: '#2f9a52' },
+  { id: 'rice', name: 'Rice white', hex: '#f6efe0' },
+  { id: 'gold', name: 'Gold dust', hex: '#d9b25f' },
 ];
 
 export function mulberry32(seed) {

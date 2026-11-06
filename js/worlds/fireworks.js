@@ -5,11 +5,9 @@
 // sky never strobes; reduced motion softens the flashes further.
 import * as THREE from '../lib/three.js';
 import { rovingGroup, setChecked } from '../core/a11y.js';
+import { t } from '../i18n/index.js';
 
-const LABELS = {
-  peony: 'Peony', chrysanthemum: 'Chrysanthemum', willow: 'Golden willow', lotus: 'Lotus', ring: 'Ring',
-  palm: 'Palm', crossette: 'Crossette', anar: 'Anar fountain', chakri: 'Chakri', sparkler: 'Sparkler',
-};
+const label = (type) => t(`fw.${type}`);
 const SHOW = ['peony', 'willow', 'lotus', 'chrysanthemum', 'ring', 'palm', 'crossette'];
 
 export function createFireworksWorld(ctx) {
@@ -34,7 +32,7 @@ export function createFireworksWorld(ctx) {
     type = b.dataset.fw;
     // The sparkler needs dragging on the sky, so the sky stops scrolling the page
     stage.classList.toggle('is-drawing', type === 'sparkler' && active);
-    ctx.announce(type === 'sparkler' ? 'Sparkler: drag across the sky to write with light. Scroll using the card.' : `${LABELS[type]} selected. Tap the sky to launch.`);
+    ctx.announce(type === 'sparkler' ? t('fw.sparklerSelected') : t('fw.selected', { name: label(type) }));
   });
   setChecked(group, '[data-fw]', group.querySelector('[aria-checked="true"]'));
 
@@ -69,6 +67,7 @@ export function createFireworksWorld(ctx) {
     if (!fw) return;
     if (!fw.canLaunch() && kind !== 'anar' && kind !== 'chakri') return;
     fw.launch(kind, targetFor(kind, x, y));
+    return true;
   }
 
   function randomLaunch(kind = type) {
@@ -78,14 +77,16 @@ export function createFireworksWorld(ctx) {
   }
 
   document.getElementById('fw-launch').addEventListener('click', () => {
-    if (type === 'sparkler') { ctx.toast('Drag across the sky to write with the sparkler.'); return; }
+    if (type === 'sparkler') { ctx.toast(t('fw.sparklerHint')); return; }
     randomLaunch();
-    ctx.announce(`${LABELS[type]} launched.`);
+    ctx.explore?.bump('fireworks');
+    ctx.announce(t('fw.launched', { name: label(type) }));
   });
   finaleBtn.addEventListener('click', () => {
     if (ctx.gl) fw?.finale(); else ctx.fallback.finale();
     finaleBtn.disabled = true;
-    ctx.announce('Grand finale.');
+    ctx.explore?.mark('finale');
+    ctx.announce(t('fw.finaleSaid'));
     setTimeout(() => { finaleBtn.disabled = false; }, 9000);
   });
 
@@ -141,7 +142,7 @@ export function createFireworksWorld(ctx) {
       if (!ctx.gl) ctx.fallback.sparkle(null);
     },
     onTap(e, x, y) {
-      if (type !== 'sparkler') launchAt(x, y);
+      if (type !== 'sparkler' && launchAt(x, y)) ctx.explore?.bump('fireworks');
     },
     onPointerDown(e, x, y) {
       if (type !== 'sparkler') return;

@@ -2,7 +2,8 @@
 
 export const APP_VERSION = '1.0.0';
 
-/** Worlds in journey order. `scene` says which 3D scene renders behind it. */
+/** Worlds in journey order. `scene` says which 3D scene renders behind it.
+ *  (Titles are English; the shown text comes from i18n key world.<id>.) */
 export const WORLDS = [
   { id: 'ignite', title: 'The first flame', scene: 'palace' },
   { id: 'story', title: 'The way home', scene: 'palace' },
@@ -54,9 +55,9 @@ export const G = {
  * regions; add future years here once they are confirmed.
  */
 export const FESTIVAL_DAYS = [
-  { date: '2026-11-06', tab: 'dhanteras', deva: 'शुभ धनतेरस', text: 'Happy Dhanteras: read its story' },
-  { date: '2026-11-07', tab: 'days', deva: 'छोटी दिवाली', text: 'Naraka Chaturdashi: Choti Diwali' },
-  { date: '2026-11-08', tab: 'lakshmi', deva: 'शुभ दीपावली', text: 'Happy Diwali: Lakshmi Puja tonight' },
+  { date: '2026-11-06', tab: 'dhanteras', deva: 'शुभ धनतेरस', key: 'festival.dhanteras' },
+  { date: '2026-11-07', tab: 'days', deva: 'छोटी दिवाली', key: 'festival.choti' },
+  { date: '2026-11-08', tab: 'lakshmi', deva: 'शुभ दीपावली', key: 'festival.diwali' },
 ];
 
 /** The festival day matching the visitor's local date, if any. */
@@ -70,4 +71,6 @@ export const STORAGE_KEYS = {
   wishes: 'deepotsav:wishes',
   greeting: 'deepotsav:greeting',
   rangoli: 'rangoli:latest',
+  lang: 'deepotsav:lang',
+  journal: 'deepotsav:journal',
 };

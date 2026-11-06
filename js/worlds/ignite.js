@@ -4,6 +4,7 @@
 // it lights the diya at once, so the journey is never blocked.
 import { presetById } from '../greetings/presets.js';
 import { festivalToday } from '../config.js';
+import { t, onLangChange } from '../i18n/index.js';
 
 export function createIgniteWorld(ctx) {
   const $ = (s) => document.querySelector(s);
@@ -33,7 +34,9 @@ export function createIgniteWorld(ctx) {
     $('#festival-day').hidden = false;
     $('#festival-deva').textContent = fest.deva;
     $('#festival-deva').lang = 'hi';
-    $('#festival-text').textContent = fest.text;
+    const sayFest = () => { $('#festival-text').textContent = t(fest.key); };
+    sayFest();
+    onLangChange(sayFest);
     $('#festival-link').addEventListener('click', (e) => {
       e.preventDefault();
       const target = fest.tab === 'dhanteras' ? 'dhanteras' : 'meaning';
@@ -60,13 +63,14 @@ export function createIgniteWorld(ctx) {
     if (g && (g.from || g.to)) {
       note.hidden = false;
       note.textContent = g.from
-        ? `${g.to ? `For ${g.to}: ` : ''}${g.from} has lit a diya for you. Touch the wick to receive their wishes.`
-        : `For ${g.to}: a diya has been lit for you. Touch the wick to receive it.`;
+        ? (g.to ? t('ignite.noteFromTo', { to: g.to, from: g.from }) : t('ignite.noteFrom', { from: g.from }))
+        : t('ignite.noteTo', { to: g.to });
     }
     if (!unsubscribe) unsubscribe = ctx.onFrame(placeWick);
   }
 
   function showAfter() {
+    ctx.explore?.mark('flame');
     intro.classList.add('is-gone');
     hint.classList.add('is-gone');
     hint.hidden = true;
@@ -80,7 +84,7 @@ export function createIgniteWorld(ctx) {
       const p = presetById(g.lang);
       $('#received-headline').textContent = p.headline;
       $('#received-headline').lang = p.lang;
-      $('#received-message').textContent = `${g.to ? `Dear ${g.to}, ` : ''}${g.message || p.message}`;
+      $('#received-message').textContent = `${g.to ? `${p.dear.replace('{to}', g.to)} ` : ''}${g.message || p.message}`;
       $('#received-from').textContent = g.from ? `— ${g.from}` : '';
       received.hidden = false;
     }
@@ -105,7 +109,7 @@ export function createIgniteWorld(ctx) {
     intro.classList.add('is-gone');
     ctx.audio.ignite();
     try { navigator.vibrate?.(16); } catch { /* ignore */ }
-    ctx.announce('The diya is lit. Its light spreads across the palace courtyard. Scroll to begin the journey.');
+    ctx.announce(t('ignite.lit'));
     if (ctx.gl && !ctx.reduced) {
       const done = ctx.palace.ignite();
       setTimeout(showAfter, 4200);

@@ -530,6 +530,20 @@ export class LampField {
     this.attrs.iPos.needsUpdate = true;
   }
 
+  /** Change one lamp's ignition key (lights or dims just that lamp). */
+  setKey(i, key) {
+    if (!this.attrs) return;
+    this.attrs.iParams.setW(i, key);
+    this.attrs.iParams.needsUpdate = true;
+  }
+
+  /** Change one lamp's size. */
+  setScale(i, scale) {
+    if (!this.attrs) return;
+    this.attrs.iParams.setX(i, scale);
+    this.attrs.iParams.needsUpdate = true;
+  }
+
   /** Keep minimum on-screen sizes correct for the current camera. */
   updateCamera(camera, viewportHeightPx) {
     const fovRad = (camera.fov * Math.PI) / 180;

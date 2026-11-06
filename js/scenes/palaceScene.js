@@ -15,6 +15,7 @@ import { ConeField, createDust, makeGlowMaterial } from '../gfx/volumetrics.js';
 import * as TX from '../gfx/textures.js';
 import { CameraRig } from '../core/cameraRig.js';
 import { generateRangoli } from '../rangoli/generator.js';
+import { t } from '../i18n/index.js';
 
 export const SHOTS = {
   heroClose: { pos: [0.12, 1.305, 2.66], target: [0.018, 1.2, 2.35], fov: 30, fit: 0.26, aperture: 0.9, focus: 0.34 },
@@ -53,7 +54,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   const lights = new LampLights(groupU, tier.lampLights);
 
   // --- materials -----------------------------------------------------------
-  progress('Grinding the sandstone…', 0.3);
+  progress(t('loader.sandstone'), 0.3);
   await tick();
   const aniso = Math.min(8, engine.renderer.capabilities.getMaxAnisotropy());
   const floorTex = TX.stoneFloor(low ? 256 : 512, aniso);
@@ -129,7 +130,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   }
 
   // --- fields & architecture ------------------------------------------------
-  progress('Raising the palace…', 0.45);
+  progress(t('loader.palace'), 0.45);
   await tick();
   const P = LAYOUT.pool;
   const reflect = { y: P.waterY, bounds: [P.x0, P.x1, P.z0, P.z1] };
@@ -157,7 +158,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   }
 
   // --- water ---------------------------------------------------------------
-  progress('Filling the pool…', 0.6);
+  progress(t('loader.pool'), 0.6);
   await tick();
   let Reflector = null;
   if (tier.reflections) {
@@ -171,7 +172,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   if (tier.reflections) lamps.u.uStreakIntensity.value = 0.45;
 
   // --- hero diya -------------------------------------------------------------
-  progress('Twisting the wick…', 0.72);
+  progress(t('loader.wick'), 0.72);
   await tick();
   const hero = createHeroDiya({ groupU, tier, reflect });
   const heroBase = LAYOUT.heroStart.clone();
@@ -464,7 +465,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     };
   })();
 
-  progress('Lighting the first lamp…', 0.9);
+  progress(t('loader.lamp'), 0.9);
   // The stone textures are small; wait for them (briefly) so they don't
   // arrive later and rebuild shaders while someone is watching.
   if (upgraded) await Promise.race([upgraded, new Promise((r) => setTimeout(r, 6000))]);

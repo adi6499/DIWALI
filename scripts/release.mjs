@@ -23,8 +23,10 @@ async function walk(dir) {
 }
 
 const files = [...INCLUDE_FILES.map((f) => join(root, f))];
-// Textures are cached on first use instead: low-end phones never load them.
-for (const d of INCLUDE_DIRS) files.push(...(await walk(join(root, d))).filter((f) => !/[\\/]assets[\\/]textures[\\/]/.test(f)));
+// Textures and the other languages are cached on first use instead: a phone
+// only downloads what it actually shows.
+const later = (f) => /[\\/]assets[\\/]textures[\\/]/.test(f) || /[\\/]js[\\/]i18n[\\/](?!en\.js|index\.js)[a-z]{2}\.js$/.test(f);
+for (const d of INCLUDE_DIRS) files.push(...(await walk(join(root, d))).filter((f) => !later(f)));
 const hash = createHash('sha256');
 let bytes = 0;
 for (const f of files.sort()) {

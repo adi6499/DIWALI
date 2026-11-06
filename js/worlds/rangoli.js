@@ -5,6 +5,7 @@ import { POWDERS } from '../rangoli/generator.js';
 import { createStudio } from '../rangoli/studio.js';
 import { setChecked, rovingGroup } from '../core/a11y.js';
 import { canvasToBlob, downloadBlob } from '../core/ui.js';
+import { t, onLangChange } from '../i18n/index.js';
 
 export function createRangoliWorld(ctx) {
   const el = document.getElementById('rangoli');
@@ -36,12 +37,20 @@ export function createRangoliWorld(ctx) {
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
       b.tabIndex = i === 0 ? 0 : -1;
-      b.setAttribute('aria-label', p.name);
-      b.title = p.name;
+      b.dataset.color = p.id;
       b.style.background = p.hex;
       b.dataset.index = String(i);
       swatches.append(b);
     });
+    const nameSwatches = () => {
+      for (const b of swatches.children) {
+        const name = t(`color.${b.dataset.color}`);
+        b.setAttribute('aria-label', name);
+        b.title = name;
+      }
+    };
+    nameSwatches();
+    onLangChange(nameSwatches);
     rovingGroup(swatches, '.swatch', (b) => {
       setChecked(swatches, '.swatch', b);
       studio.setColor(Number(b.dataset.index));
@@ -49,7 +58,7 @@ export function createRangoliWorld(ctx) {
     rovingGroup(toolGroup, '[data-tool]', (b) => {
       setChecked(toolGroup, '[data-tool]', b);
       studio.setTool(b.dataset.tool);
-      ctx.announce(`${b.textContent} tool.`);
+      ctx.announce(t('studio.toolSelected', { tool: b.textContent }));
     });
     setChecked(toolGroup, '[data-tool]', toolGroup.querySelector('[aria-checked="true"]'));
 
@@ -60,18 +69,18 @@ export function createRangoliWorld(ctx) {
       canvas.style.background = e.target.value;
     });
     sizeRange.addEventListener('input', () => studio.setSize(Number(sizeRange.value)));
-    document.getElementById('r-undo').addEventListener('click', () => { if (!studio.undo()) ctx.toast('Nothing to undo.'); });
-    document.getElementById('r-redo').addEventListener('click', () => { if (!studio.redo()) ctx.toast('Nothing to redo.'); });
+    document.getElementById('r-undo').addEventListener('click', () => { if (!studio.undo()) ctx.toast(t('studio.nothingUndo')); });
+    document.getElementById('r-redo').addEventListener('click', () => { if (!studio.redo()) ctx.toast(t('studio.nothingRedo')); });
     document.getElementById('r-clear').addEventListener('click', () => studio.clear());
     document.getElementById('r-inspire').addEventListener('click', () => studio.inspire());
     document.getElementById('r-download').addEventListener('click', async () => {
       try {
         const blob = await canvasToBlob(studio.exportCanvas({ floor: true }));
         downloadBlob(blob, 'deepotsav-rangoli.png');
-        ctx.toast('Rangoli saved as deepotsav-rangoli.png');
+        ctx.toast(t('studio.saved'));
       } catch (err) {
         console.error(err);
-        ctx.toast('Sorry, the image could not be saved.');
+        ctx.toast(t('studio.saveFail'));
       }
     });
     document.getElementById('studio-close').addEventListener('click', close);
@@ -107,7 +116,7 @@ export function createRangoliWorld(ctx) {
     if (ctx.gl) ctx.engine.maxFps = 30;
     document.getElementById('rangoli-title').focus({ preventScroll: true });
     studio.render();
-    ctx.announce('Rangoli studio open. Escape closes it.');
+    ctx.announce(t('studio.opened'));
   }
 
   function close() {
@@ -115,7 +124,8 @@ export function createRangoliWorld(ctx) {
     document.documentElement.classList.remove('studio-open');
     if (ctx.gl) ctx.engine.maxFps = 0;
     openBtn.focus({ preventScroll: true });
-    ctx.announce('Your rangoli is on the courtyard floor.');
+    if (studio?.canUndo) ctx.explore?.mark('rangoli');
+    ctx.announce(t('studio.closed'));
   }
 
   openBtn.addEventListener('click', open);

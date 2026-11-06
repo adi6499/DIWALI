@@ -6,6 +6,7 @@
 import { POWDERS, powderStamp, petal, ringStroke, generateRangoli, mulberry32 } from './generator.js';
 import { idbGet, idbSet } from '../core/storage.js';
 import { STORAGE_KEYS } from '../config.js';
+import { t } from '../i18n/index.js';
 
 const CHECKPOINT_EVERY = 8;
 const MAX_CHECKPOINTS = 6;
@@ -271,13 +272,13 @@ export function createStudio({ canvas, cursorEl, size = 1024, onChange = () => {
       e.preventDefault();
       kb.down = !kb.down;
       if (kb.down) begin(kb.x, kb.y); else end();
-      announce(kb.down ? 'Drawing. Move with the arrow keys.' : 'Lifted the brush.');
+      announce(kb.down ? t('studio.drawing') : t('studio.lifted'));
       return;
     } else if (e.key === 'Enter') {
       e.preventDefault();
       begin(kb.x, kb.y);
       end();
-      announce('Placed.');
+      announce(t('studio.placed'));
       return;
     } else if (e.key === '+' || e.key === '=') { setSize(state.size + 2); e.preventDefault(); return; }
     else if (e.key === '-') { setSize(state.size - 2); e.preventDefault(); return; }
@@ -313,7 +314,7 @@ export function createStudio({ canvas, cursorEl, size = 1024, onChange = () => {
       redo.push(commands.pop());
       rebuild();
       changed();
-      announce('Undone.');
+      announce(t('studio.undone'));
       return true;
     },
     redo() {
@@ -321,20 +322,20 @@ export function createStudio({ canvas, cursorEl, size = 1024, onChange = () => {
       commands.push(redo.pop());
       rebuild();
       changed();
-      announce('Redone.');
+      announce(t('studio.redone'));
       return true;
     },
     clear() {
       const cmd = { type: 'clear' };
       runCommand(ictx, cmd);
       commit(cmd);
-      announce('Canvas cleared. Undo brings it back.');
+      announce(t('studio.cleared'));
     },
     inspire() {
       const cmd = { type: 'inspire', seed: (Math.random() * 1e6) | 0 };
       runCommand(ictx, cmd);
       commit(cmd);
-      announce('A new rangoli design was drawn. You can draw over it.');
+      announce(t('studio.inspired'));
     },
     /** Image for download/greeting: floor colour + ink. */
     exportCanvas({ floor = true, out = size } = {}) {

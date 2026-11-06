@@ -8,6 +8,13 @@ import { rovingGroup, setChecked } from '../core/a11y.js';
 import { canvasToBlob, downloadBlob, shareContent, copyText, sleep } from '../core/ui.js';
 import { readJSON, writeJSON } from '../core/storage.js';
 import { STORAGE_KEYS, festivalToday } from '../config.js';
+import { t, current, onLangChange } from '../i18n/index.js';
+
+/** The greeting that matches the page's language (Dhanteras on its day). */
+function defaultPreset() {
+  if (festivalToday()?.tab === 'dhanteras') return current() === 'en' ? 'dhanteras-en' : 'dhanteras';
+  return PRESETS.some((p) => p.id === current()) ? current() : 'hi';
+}
 
 export function createGreetingsWorld(ctx) {
   const el = document.getElementById('greetings');
@@ -21,7 +28,8 @@ export function createGreetingsWorld(ctx) {
 
   const saved = readJSON(STORAGE_KEYS.greeting, {}) || {};
   const g = {
-    to: saved.to || '', from: saved.from || '', lang: saved.lang || (festivalToday()?.tab === 'dhanteras' ? 'dhanteras' : 'hi'),
+    to: saved.to || '', from: saved.from || '', lang: (saved.langChosen && saved.lang) || defaultPreset(),
+    langChosen: !!saved.langChosen,
     message: saved.message ?? '', style: saved.style || 'courtyard', accent: saved.accent || 'gold',
     customMessage: !!saved.customMessage,
   };
@@ -52,14 +60,14 @@ export function createGreetingsWorld(ctx) {
     const rangoli = ctx.rangoliImage?.() || null;
     drawCard(canvas, data(), { background, rangoli });
     const p = presetById(g.lang);
-    canvas.setAttribute('aria-label', `Greeting card preview: ${p.headline}. ${g.to ? `Dear ${g.to}. ` : ''}${msg.value}${g.from ? ` From ${g.from}.` : ''}`);
+    canvas.setAttribute('aria-label', t('greet.previewAria', { text: `${p.headline}. ${g.to ? `${p.dear.replace('{to}', g.to)} ` : ''}${msg.value}${g.from ? ` — ${g.from}` : ''}` }));
   }
 
   function schedule() {
     clearTimeout(timer);
     timer = setTimeout(() => {
       render();
-      writeJSON(STORAGE_KEYS.greeting, { to: g.to, from: g.from, lang: g.lang, message: msg.value, style: g.style, accent: g.accent, customMessage: g.customMessage });
+      writeJSON(STORAGE_KEYS.greeting, { to: g.to, from: g.from, lang: g.lang, langChosen: g.langChosen, message: msg.value, style: g.style, accent: g.accent, customMessage: g.customMessage });
     }, 120);
   }
 
@@ -68,6 +76,7 @@ export function createGreetingsWorld(ctx) {
   msg.addEventListener('input', () => { g.customMessage = true; g.message = msg.value; schedule(); });
   lang.addEventListener('change', () => {
     g.lang = lang.value;
+    g.langChosen = true;
     if (!g.customMessage) msg.value = presetById(g.lang).message;
     schedule();
   });
@@ -102,10 +111,11 @@ export function createGreetingsWorld(ctx) {
   document.getElementById('g-download').addEventListener('click', async () => {
     try {
       downloadBlob(await cardBlob(), 'deepotsav-greeting.png');
-      ctx.toast('Card saved as deepotsav-greeting.png');
+      ctx.explore?.mark('greeting');
+      ctx.toast(t('greet.saved'));
     } catch (err) {
       console.error(err);
-      ctx.toast('Sorry, the card could not be saved.');
+      ctx.toast(t('greet.saveFail'));
     }
   });
 
@@ -115,22 +125,32 @@ export function createGreetingsWorld(ctx) {
     let file = null;
     try { file = new File([await cardBlob()], 'deepotsav-greeting.png', { type: 'image/png' }); } catch { file = null; }
     const p = presetById(d.lang);
-    const text = `${p.headline}${d.to ? `, ${d.to}` : ''}! A diya is waiting for you to light.`;
+    const text = `${p.headline}${d.to ? `, ${d.to}` : ''}! ${t('greet.shareWaiting')}`;
     const r = await shareContent({ title: p.headline, text, url, file });
-    if (r === 'copied') ctx.toast('Sharing isn’t available here, so the link was copied instead.');
-    else if (r === 'unsupported') ctx.toast('Sharing isn’t available on this device. Try Download or Copy link.');
+    if (r === 'shared' || r === 'copied') ctx.explore?.mark('greeting');
+    if (r === 'copied') ctx.toast(t('greet.shareCopied'));
+    else if (r === 'unsupported') ctx.toast(t('greet.shareUnsupported'));
     if (r === 'shared' && file) {
       // Some share targets drop the URL when a file is attached; offer the link too.
-      ctx.toast('Shared. You can also copy the personal link.', { action: { label: 'Copy link', onClick: () => copyText(url).then(() => ctx.toast('Link copied.')) } });
+      ctx.toast(t('greet.shared'), { action: { label: t('greet.copyLink'), onClick: () => copyText(url).then(() => ctx.toast(t('greet.linkCopied'))) } });
     }
   });
 
   document.getElementById('g-link').addEventListener('click', async () => {
     const ok = await copyText(greetingUrl(data()));
-    ctx.toast(ok ? 'Personal link copied. Paste it into any message.' : 'Could not copy the link.');
+    if (ok) ctx.explore?.mark('greeting');
+    ctx.toast(ok ? t('greet.personalCopied') : t('greet.copyFail'));
   });
 
   syncForm();
+
+  // Until someone picks a greeting themselves, it follows the page's language
+  onLangChange(() => {
+    if (g.langChosen || g.customMessage) { render(); return; }
+    g.lang = defaultPreset();
+    syncForm();
+    schedule();
+  });
 
   return {
     id: 'greetings',

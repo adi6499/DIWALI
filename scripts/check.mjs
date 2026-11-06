@@ -54,5 +54,15 @@ for (const f of jsFiles) {
 }
 ok('element ids referenced by scripts exist');
 
+try {
+  const { checkTranslations } = await import('./i18n.mjs');
+  const { problems, langs, keys } = await checkTranslations();
+  for (const p of problems.slice(0, 40)) fail(`translation ${p}`);
+  if (problems.length > 40) fail(`…and ${problems.length - 40} more translation problems`);
+  ok(`${keys} texts in ${langs.length + 1} languages (en, ${langs.join(', ')})`);
+} catch (err) {
+  fail(`translations: ${err.message}`);
+}
+
 if (failures) { console.error(`\n${failures} problem(s) found`); process.exit(1); }
 console.log('\nAll checks passed.');

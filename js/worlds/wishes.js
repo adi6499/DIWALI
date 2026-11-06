@@ -4,6 +4,7 @@
 import { WISH_ENDPOINT, STORAGE_KEYS } from '../config.js';
 import { readJSON, writeJSON } from '../core/storage.js';
 import { openDialog, shareContent } from '../core/ui.js';
+import { t, locale, onLangChange } from '../i18n/index.js';
 
 const MAX = 40;
 
@@ -28,7 +29,11 @@ export function createWishesWorld(ctx) {
 
   if (WISH_ENDPOINT) {
     consentBox.hidden = false;
-    document.getElementById('wish-privacy-text').textContent = 'Wishes stay on this device unless you tick the box above for a wish.';
+    const note = document.getElementById('wish-privacy-text');
+    note.removeAttribute('data-i18n');
+    const say = () => { note.textContent = t('wish.privacyWall'); };
+    say();
+    onLangChange(say);
   }
 
   text.addEventListener('input', () => { count.textContent = `${text.value.length} / 160`; });
@@ -45,13 +50,13 @@ export function createWishesWorld(ctx) {
       p.textContent = w.text;
       const d = document.createElement('span');
       d.className = 'fine';
-      d.textContent = new Date(w.created).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      d.textContent = new Date(w.created).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' });
       body.append(p, d);
       const del = document.createElement('button');
       del.type = 'button';
       del.className = 'icon-btn';
       del.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>';
-      del.setAttribute('aria-label', `Remove wish: ${w.text.slice(0, 40)}`);
+      del.setAttribute('aria-label', t('wish.remove', { text: w.text.slice(0, 40) }));
       del.addEventListener('click', () => remove(w.id));
       li.append(body, del);
       list.append(li);
@@ -63,17 +68,17 @@ export function createWishesWorld(ctx) {
     save();
     if (ctx.gl) river?.removeWish(id); else ctx.fallback.removeWish(id);
     renderList();
-    ctx.announce('Wish removed.');
+    ctx.announce(t('wish.removed'));
   }
 
   document.getElementById('wish-clear').addEventListener('click', () => {
     if (!wishes.length) return;
-    if (!window.confirm('Remove all of your wishes from this device?')) return;
+    if (!window.confirm(t('wish.confirmClear'))) return;
     wishes = [];
     save();
     if (ctx.gl) river?.clearWishes(); else ctx.fallback.clearWishes();
     renderList();
-    ctx.announce('All wishes removed.');
+    ctx.announce(t('wish.allRemoved'));
   });
 
   form.addEventListener('submit', async (e) => {
@@ -81,7 +86,7 @@ export function createWishesWorld(ctx) {
     const value = text.value.replace(/\s+/g, ' ').trim().slice(0, 160);
     if (!value) {
       text.focus();
-      ctx.toast('Write a wish first.');
+      ctx.toast(t('wish.writeFirst'));
       return;
     }
     const w = { id: `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, text: value, created: Date.now(), xT: (Math.random() - 0.5) * 9, zT: -9 - Math.random() * 20, ph: Math.random() * 6.28 };
@@ -93,7 +98,8 @@ export function createWishesWorld(ctx) {
     count.textContent = '0 / 160';
     text.blur(); // closes the phone keyboard so the river can be seen
     ctx.audio.chime();
-    ctx.announce('Your diya is floating out across the water with your wish.');
+    ctx.explore?.mark('wish');
+    ctx.announce(t('wish.floating'));
     if (ctx.gl && river) {
       const item = river.addWish(w, { fresh: true });
       releaseMoment(item, value);
@@ -105,9 +111,9 @@ export function createWishesWorld(ctx) {
       consent.checked = false;
       try {
         await fetch(WISH_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: value, lang: navigator.language || 'en', created: new Date().toISOString() }), credentials: 'omit', referrerPolicy: 'no-referrer' });
-        ctx.toast('Shared on the public wish wall.');
+        ctx.toast(t('wish.wallShared'));
       } catch {
-        ctx.toast('Could not reach the wish wall; your wish is still saved here.');
+        ctx.toast(t('wish.wallFail'));
       }
     }
   });
@@ -127,7 +133,7 @@ export function createWishesWorld(ctx) {
     done.hidden = true;
     caption = document.createElement('p');
     caption.className = 'release-caption';
-    caption.textContent = 'Your diya is setting out across the water…';
+    caption.textContent = t('wish.settingOut');
     document.body.append(caption);
     if (item) {
       floatWords(value, item);
@@ -181,15 +187,15 @@ export function createWishesWorld(ctx) {
   function showWish(w) {
     openWish = w;
     document.getElementById('wish-dialog-text').textContent = w.text;
-    document.getElementById('wish-dialog-date').textContent = w.created ? `Released ${new Date(w.created).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}` : '';
+    document.getElementById('wish-dialog-date').textContent = w.created ? t('wish.released', { date: new Date(w.created).toLocaleString(locale(), { dateStyle: 'long', timeStyle: 'short' }) }) : '';
     openDialog(dialog);
   }
 
   document.getElementById('wish-dialog-share').addEventListener('click', async () => {
     if (!openWish) return;
     // Sharing is always the author's own explicit action, through their device's share sheet.
-    const r = await shareContent({ title: 'A Diwali wish', text: `“${openWish.text}”\n🪔 Set afloat on Deepotsav`, url: `${location.origin}${location.pathname}#/wishes` });
-    if (r === 'copied') ctx.toast('Wish copied to the clipboard.');
+    const r = await shareContent({ title: t('wish.shareTitle'), text: `“${openWish.text}”\n🪔 ${t('wish.shareText')}`, url: `${location.origin}${location.pathname}#/wishes` });
+    if (r === 'copied') ctx.toast(t('wish.copied'));
   });
 
   /** Put this visitor's earlier wishes back on the water once the river exists. */

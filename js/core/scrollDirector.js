@@ -15,6 +15,7 @@ import * as THREE from '../lib/three.js';
 
 const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const smoother = (x) => x * x * x * (x * (x * 6 - 15) + 10);
+const smooth = (x) => x * x * (3 - 2 * x);
 const lerp = (a, b, t) => a + (b - a) * t;
 
 const _p0 = new THREE.Vector3();
@@ -28,11 +29,13 @@ const _m = new THREE.Vector3();
 function v3(out, a) { return Array.isArray(a) ? out.set(a[0], a[1], a[2]) : out.copy(a); }
 
 /** Camera state between shot a and b at eased progress e. */
-export function flight(a, b, e, out, { reduced = false } = {}) {
+export function flight(a, b, e, out, { reduced = false, arcs = true } = {}) {
   v3(_p0, a.pos); v3(_p1, b.pos); v3(_t0, a.target); v3(_t1, b.target);
   if (reduced) e = e < 0.5 ? 0 : 1;
-  const dist = _p0.distanceTo(_p1) + _t0.distanceTo(_t1) * 0.25;
-  const lift = reduced ? 0 : Math.min(24, Math.max(0, dist * 0.42 - 0.6));
+  // Rise in an arc only when the camera really travels; turning to look
+  // somewhere else from nearly the same spot shouldn't make it hop.
+  const dist = _p0.distanceTo(_p1) + _t0.distanceTo(_t1) * 0.08;
+  const lift = reduced || !arcs ? 0 : Math.min(24, Math.max(0, dist * 0.42 - 0.6));
   const top = Math.max(_p0.y, _p1.y) + lift;
   _c1.lerpVectors(_p0, _p1, 0.22); _c1.y = lerp(_p0.y, top, 0.9);
   _c2.lerpVectors(_p0, _p1, 0.78); _c2.y = lerp(_p1.y, top, 0.9);
@@ -87,12 +90,38 @@ export class ScrollDirector {
     this._a = state();
     this._b = state();
     this._s = state();
+    this._smooth = new Map();
+    this.sizeSections();
     this.measure();
     let raf = 0;
     const remeasure = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => this.measure()); };
     window.addEventListener('resize', remeasure);
     window.visualViewport?.addEventListener('resize', remeasure);
     if (window.ResizeObserver) new ResizeObserver(remeasure).observe(document.getElementById('main'));
+  }
+
+  /**
+   * Give long camera flights more scroll distance, so the camera keeps a calm,
+   * even speed instead of racing through a long move in a short scroll.
+   */
+  sizeSections() {
+    const shots = this.ctx.palace?.shots;
+    if (!shots) return; // 2D fallback: no flights, keep the stylesheet's sizes
+    for (let i = 1; i < this.sections.length; i++) {
+      const A = this.sections[i - 1];
+      const B = this.sections[i];
+      let dist = 30;
+      if (shots && A.scene === 'palace' && B.scene === 'palace' && shots[A.shot] && shots[B.shot]) {
+        _p0.fromArray(shots[A.shot].pos);
+        _p1.fromArray(shots[B.shot].pos);
+        dist = _p0.distanceTo(_p1);
+      } else if (A.scene === 'river' && B.scene === 'river') {
+        dist = 12;
+      }
+      const extra = Math.round(Math.min(110, Math.max(0, dist - 3) * 4.2));
+      if (B.el.matches('.sec-greet, .sec-end')) continue;
+      B.el.style.minHeight = `${140 + extra}svh`;
+    }
   }
 
   /**
@@ -173,11 +202,14 @@ export class ScrollDirector {
 
     // progress bar
     const bar = document.getElementById('rail-progress');
-    if (bar) bar.style.width = `${(clamp01(this.y / this.max) * 100).toFixed(2)}%`;
+    if (bar) bar.style.transform = `scaleX(${clamp01(this.y / this.max).toFixed(4)})`;
 
     // section / group changes follow the *real* scroll position, not the smoothed one
+    // A little hysteresis, so resting near the midpoint between two cards can't
+    // make them flip back and forth between dim and bright.
     const live = this.indexAt(window.scrollY);
-    const cur = Math.min(this.sections.length - 1, Math.round(live));
+    let cur = this.current;
+    if (cur < 0 || Math.abs(live - cur) > 0.62) cur = Math.min(this.sections.length - 1, Math.round(live));
     if (cur !== this.current) {
       const prev = this.current;
       this.current = cur;
@@ -206,7 +238,7 @@ export class ScrollDirector {
     const A = this.sections[i];
     const B = this.sections[Math.min(this.sections.length - 1, i + 1)];
     const u = f - i;
-    const e = smoother(clamp01((u - 0.1) / 0.8));
+    const e = smooth(clamp01((u - 0.06) / 0.88));
     const reduced = ctx.reduced;
     const palace = ctx.palace;
     const river = ctx.river;
@@ -227,8 +259,12 @@ export class ScrollDirector {
       // palace ⇄ river: up into the sky, dissolve, down onto the other place
       const pA = A.scene === 'river' ? river : { shots: palace.shots, rig: palace.rig, handle: palace.handle };
       const pB = B.scene === 'river' ? river : { shots: palace.shots, rig: palace.rig, handle: palace.handle };
-      flight(pA.shots[A.shot], pA.shots.aerial, clamp01(e / 0.55), this._a, { reduced });
-      flight(pB.shots.aerial, pB.shots[B.shot], clamp01((e - 0.45) / 0.55), this._b, { reduced });
+      // Each camera keeps moving through the whole cross-fade; it only starts
+      // (or stops) while its picture is fully hidden, so nothing lurches.
+      // (no extra arc: the sky view is already high, so climbing past it
+      // and dipping back would read as a bump)
+      flight(pA.shots[A.shot], pA.shots.aerial, clamp01(e / 0.7), this._a, { reduced, arcs: false });
+      flight(pB.shots.aerial, pB.shots[B.shot], clamp01((e - 0.3) / 0.7), this._b, { reduced, arcs: false });
       this._apply(pA.rig, this._a, dt, A, A, 0);
       this._apply(pB.rig, this._b, dt, B, B, 0);
       const t = reduced ? (e < 0.5 ? 0 : 1) : THREE.MathUtils.smoothstep(e, 0.38, 0.62);
@@ -275,7 +311,21 @@ export class ScrollDirector {
         if (hs.t >= hs.dur) this.holdState = null;
       }
     }
-    rig.setDirect({ pos, target, fov, fit: s.fit, focus, aperture: s.aperture });
+    // Light inertia on the camera itself: even a fast flick of the wheel or a
+    // swipe becomes a glide. (Reduced motion snaps straight to the result.)
+    const now = performance.now();
+    let st = this._smooth.get(rig);
+    if (!st || now - st.last > 600 || this.ctx.reduced) {
+      st = { pos: pos.clone(), target: target.clone(), fov, last: now };
+      this._smooth.set(rig, st);
+    } else {
+      const k = 1 - Math.exp(-dt * 6.5);
+      st.pos.lerp(pos, k);
+      st.target.lerp(target, k);
+      st.fov += (fov - st.fov) * k;
+      st.last = now;
+    }
+    rig.setDirect({ pos: st.pos, target: st.target, fov: st.fov, fit: s.fit, focus, aperture: s.aperture });
     const [ax, ay] = this.ctx.shiftFor(A.shift);
     const [bx, by] = this.ctx.shiftFor(B.shift);
     rig.setShift(lerp(ax, bx, e) * (1 - held), lerp(ay, by, e) * (1 - held));
@@ -296,7 +346,7 @@ export class ScrollDirector {
     const i = Math.floor(f);
     const A = this.sections[i];
     const B = this.sections[Math.min(this.sections.length - 1, i + 1)];
-    const e = smoother(clamp01((f - i - 0.1) / 0.8));
+    const e = smooth(clamp01((f - i - 0.06) / 0.88));
     ctx.palace.blendMood(A.mood, B.mood, e);
   }
 

@@ -68,7 +68,9 @@ const ctx = {
     if (!riverPromise) {
       riverPromise = import('./scenes/riverScene.js')
         .then(({ createRiverScene }) => createRiverScene({ engine: ctx.engine, tier: ctx.tier }))
-        .then((r) => {
+        .then(async (r) => {
+          // prepare its shaders now, not on the first frame of the dissolve
+          try { await ctx.engine.warm(r.handle.scene, r.handle.camera); } catch (err) { console.warn('[deepotsav] river warm-up failed', err); }
           ctx.river = r;
           r.rig.reduced = ctx.reduced;
           ctx.engine.register(r.handle);
@@ -299,6 +301,9 @@ async function boot() {
       ctx.palace = await createPalaceScene({ engine, tier, progress: (t, p) => loader.set(t, 0.2 + p * 0.75) });
       ctx.gl = true;
       engine.use(ctx.palace.handle);
+      // one full frame behind the loader, so the finishing passes (bloom,
+      // anti-aliasing, colour) are built before the first visible frame
+      try { engine.renderFrame(); } catch (err) { console.warn('[deepotsav] first frame failed', err); }
       wireStage(canvas);
       window.__deepotsav = { ctx, engine, gsap, stats: () => ({ ...ctx.palace.stats(), calls: engine.renderer.info.render.calls, tier: tier.name, pr: engine.pixelRatio }) };
     } catch (err) {
@@ -347,7 +352,9 @@ async function boot() {
     for (const fn of frameFns) fn(dt, performance.now() / 1000);
   };
   if (ctx.gl) {
-    ctx.engine.onFrame(tick);
+    // cameras are set before the scenes draw, so the picture never lags a frame
+    ctx.engine.onBeforeFrame((dt) => director.update(dt));
+    ctx.engine.onFrame((dt) => { for (const fn of frameFns) fn(dt, performance.now() / 1000); });
     ctx.engine.start();
   } else {
     let last = performance.now();

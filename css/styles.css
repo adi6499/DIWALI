@@ -96,7 +96,8 @@ em { font-style: italic; }
 .aside { font-size: 14px; color: var(--ivory-faint); font-style: italic; }
 
 /* ---------- Stage ---------- */
-.stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; touch-action: pan-y; outline: none; }
+/* Sized to the large viewport so a phone's address bar never resizes it */
+.stage { position: fixed; left: 0; top: 0; width: 100%; height: 100vh; height: 100lvh; display: block; z-index: 0; touch-action: pan-y; outline: none; }
 .stage.is-drawing { touch-action: none; }
 .no-js .stage, .no-js .curtain, .no-js .loader { display: none; }
 
@@ -214,7 +215,8 @@ fieldset.tool-group legend { font-size: 12px; letter-spacing: 0.14em; text-trans
 
 
 /* ---------- Journey (one long scroll over a fixed 3D stage) ---------- */
-html.js { scroll-snap-type: y proximity; scroll-padding-top: 26svh; }
+html.js { scroll-padding-top: 26svh; }
+@media (pointer: coarse) { html.js { scroll-snap-type: y proximity; } }
 @media (min-width: 900px), (max-height: 520px) and (orientation: landscape) { html.js { scroll-padding-top: 0; } }
 html.js.studio-open { overflow: hidden; scroll-snap-type: none; }
 .js main.journey { position: relative; z-index: 10; outline: none; }
@@ -410,7 +412,7 @@ html.js.studio-open { overflow: hidden; scroll-snap-type: none; }
 .rail-list a[aria-current="step"] { color: var(--gold-200); background: rgba(214, 174, 94, 0.16); }
 .rail-label { display: none; }
 .rail-progress { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(244, 236, 219, 0.08); }
-.rail-progress span { display: block; height: 100%; width: 0; background: var(--gold-400); transform-origin: left; }
+.rail-progress span { display: block; height: 100%; width: 100%; background: var(--gold-400); transform-origin: left; transform: scaleX(0); will-change: transform; }
 .no-js .rail, .no-js .topbar-actions, .no-js .wick-target, .no-js .hero-foot, .no-js .topbar { display: none; }
 
 /* ---------- Dialogs ---------- */

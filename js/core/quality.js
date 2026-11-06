@@ -54,7 +54,7 @@ export function resolveTier(setting, probed) {
  * onDegrade() when even the lowest resolution is too slow.
  */
 export class AdaptiveMonitor {
-  constructor({ onScale, onDegrade, minScale = 0.8 }) {
+  constructor({ onScale, onDegrade, minScale = 0.85 }) {
     this.onScale = onScale;
     this.onDegrade = onDegrade;
     this.minScale = minScale;
@@ -82,19 +82,23 @@ export class AdaptiveMonitor {
     this.samples.length = 0;
     if (this.cooldown > 0) { this.cooldown--; return; }
 
-    if (median > 1 / 40) {
+    // Every resolution change rebuilds render targets (a visible flash), so
+    // change it rarely: only after two slow windows in a row, one step at a
+    // time, and never back up during the visit.
+    if (median > 1 / 38) {
+      this.slow = (this.slow || 0) + 1;
+      if (this.slow < 2) return;
+      this.slow = 0;
       if (this.scale > this.minScale + 0.01) {
-        this.scale = Math.max(this.minScale, this.scale - 0.1);
+        this.scale = Math.max(this.minScale, this.scale - 0.15);
         this.onScale(this.scale);
-        this.cooldown = 1;
+        this.cooldown = 3;
       } else if (!this.degraded) {
         this.degraded = true;
         this.onDegrade();
       }
-    } else if (median < 1 / 70 && this.scale < 1) {
-      this.scale = Math.min(1, this.scale + 0.1);
-      this.onScale(this.scale);
-      this.cooldown = 2;
+    } else {
+      this.slow = 0;
     }
   }
 }

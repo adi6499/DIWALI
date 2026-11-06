@@ -197,7 +197,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   }
   scene.add(gateSpot, gateSpot.target);
   lights.finalize(tier.name);
-  if (tier.realTextures && tier.material !== 'lambert') upgradeMaterials();
+  const upgraded = tier.realTextures && tier.material !== 'lambert' ? upgradeMaterials() : null;
 
   // --- state -----------------------------------------------------------------
   const state = {
@@ -209,6 +209,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     fireworks: null,
   };
   const flash = new THREE.Color();
+  let envFade = 0;
   const handle = {
     name: 'palace',
     scene,
@@ -246,10 +247,10 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     water.setGlow(0, hero.worldTip.x, P.waterY, hero.worldTip.z, state.landed ? heroLit : 0);
 
     lights.update(t);
-    gateSpot.intensity = 520 * litAt(groupU, G.ARCADE, 23) * (0.95 + 0.05 * Math.sin(t * 5.3));
+    gateSpot.intensity = 520 * litAt(groupU, G.ARCADE, 23) * (0.985 + 0.015 * Math.sin(t * 2.1));
     let overall = 0;
     for (const g of [G.FLOOR, G.ARCADE, G.FACADE]) overall += litAt(groupU, g, 0) / 3;
-    hemi.intensity = (0.75 + overall * 2.0) * (scene.environment ? 0.55 : 1);
+    hemi.intensity = (0.75 + overall * 2.0) * (1 - 0.45 * envFade);
     env.tick(dt);
 
     if (state.fireworks) {
@@ -355,6 +356,7 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
     if (state.fireworks) return state.fireworks;
     const { Fireworks } = await import('../gfx/fireworks.js');
     state.fireworks = new Fireworks({ tier, engine, waterY: P.waterY, poolBounds: reflect.bounds });
+    await engine.warm(state.fireworks.object, camera, scene).catch(() => {});
     scene.add(state.fireworks.object);
     return state.fireworks;
   }
@@ -380,65 +382,94 @@ export async function createPalaceScene({ engine, tier, progress = () => {} }) {
   }
 
   // --- environment light ---------------------------------------------------------
-  // A 360° snapshot of the courtyard as it is currently lit, turned into image
-  // based lighting. Marble, oil, bronze and gold then reflect the real lamps,
-  // and stone picks up warm bounce light. It is refreshed whenever the lamps
-  // have changed noticeably, and only while the scroll is still, so it never
-  // causes a hitch mid-flight.
+  // A 360° snapshot of the fully lit courtyard, turned into image-based
+  // lighting: marble, oil, bronze and gold reflect the real lamps and stone
+  // picks up warm bounce light. It is taken ONCE, while the loader is still
+  // up (every lamp forced to full strength, so it never needs refreshing),
+  // and faded in over two seconds after the first lamp is lit.
+  // Doing it at load matters: switching image lighting on later rebuilt every
+  // shader at once and froze the picture right after the lamp was lit, and
+  // re-capturing as the lights changed caused pops when the scroll rested.
   const env = (() => {
-    if (tier.material === 'lambert') return { tick() {}, capture() {} };
+    if (tier.material === 'lambert') return { prime() {}, tick() {} };
     const renderer = engine.renderer;
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const cubeRT = new THREE.WebGLCubeRenderTarget(tier.name === 'high' ? 256 : 128, { type: THREE.HalfFloatType });
-    const cubeCam = new THREE.CubeCamera(0.3, 400, cubeRT);
-    cubeCam.position.set(0, 2.4, -1.5);
-    scene.add(cubeCam);
-    let current = null;
-    let lastSum = -1;
-    let cool = 2;
     const intensity = { sandstone: 0.45, floor: 0.6, ivory: 0.9, granite: 0.5, bronze: 1.2, gold: 1.4, marigold: 0.35, clay: 0.4, jaali: 0.4, rangoli: 0.3, feet: 0.3 };
+    let wait = 0.6;
+    let fade = 0;
+    const fades = new Map(); // material → its full reflection strength
     function capture() {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      // A blank stand-in first, so the snapshot is drawn with the same shader
+      // versions the page will use (image lighting on) and nothing is built
+      // twice. Same size as the real one (fromScene is always 256).
+      const blank = pmrem.fromScene(new THREE.Scene());
+      scene.environment = blank.texture;
+      const cubeRT = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
+      const cubeCam = new THREE.CubeCamera(0.3, 400, cubeRT);
+      cubeCam.position.set(0, 2.4, -1.5);
+      // every lamp at full strength, whatever the state is now
+      const w = groupU.uWaves.value;
+      const g = groupU.uGains.value;
+      const savedW = [...w];
+      const savedG = [...g];
+      for (let i = 0; i < w.length; i++) { w[i] = 60; g[i] = 1; }
+      lights.update(0);
       const camPos = sky.mesh.position.clone();
       sky.mesh.position.copy(cubeCam.position);
-      const hidden = [hero.embers, kandilHalos.group];
+      // Hide what would show up in the reflections (the floating diya, its
+      // flame and halos) but keep its lights: changing the number of lights
+      // makes every material rebuild its shader.
+      const hidden = [];
+      for (const root of [hero.embers, kandilHalos.group, hero.group, hero.flame.group]) {
+        root.traverse((o) => { if (!o.isLight && (o.isMesh || o.isPoints || o.isSprite || o.isLine)) hidden.push(o); });
+      }
+      const vis = hidden.map((o) => o.visible);
       hidden.forEach((o) => { o.visible = false; });
       const ac = renderer.autoClear;
       renderer.autoClear = true;
       cubeCam.update(renderer, scene);
       renderer.autoClear = ac;
-      hidden.forEach((o) => { o.visible = true; });
+      hidden.forEach((o, i) => { o.visible = vis[i]; });
       sky.mesh.position.copy(camPos);
-      const next = pmrem.fromCubemap(cubeRT.texture);
-      const firstTime = !current;
-      current?.dispose();
-      current = next;
-      scene.environment = next.texture;
-      if (firstTime) {
-        for (const [k, v] of Object.entries(intensity)) if (materials[k]) materials[k].envMapIntensity = v;
-        hero.bowl.material.envMapIntensity = 0.5;
-      }
+      savedW.forEach((v, i) => { w[i] = v; });
+      savedG.forEach((v, i) => { g[i] = v; });
+      lights.update(0);
+      scene.environment = pmrem.fromCubemap(cubeRT.texture).texture;
+      blank.dispose();
+      cubeRT.dispose();
+      pmrem.dispose();
     }
     return {
-      capture,
+      prime() {
+        try {
+          capture();
+          // every lit material fades in together (the diya's oil included),
+          // so nothing turns shiny all at once
+          scene.traverse((o) => {
+            for (const m of [].concat(o.material || [])) if (m.isMeshStandardMaterial && !fades.has(m)) fades.set(m, m.envMapIntensity);
+          });
+          for (const [k, v] of Object.entries(intensity)) if (materials[k]) fades.set(materials[k], v);
+          fades.set(hero.bowl.material, 0.5);
+          for (const m of fades.keys()) m.envMapIntensity = 0;
+        } catch (err) { console.warn('[palace] environment capture failed', err); }
+      },
       tick(dt) {
-        cool -= dt;
-        if (cool > 0 || !state.ignited) return;
-        const w = groupU.uWaves.value;
-        const g = groupU.uGains.value;
-        let sum = 0;
-        for (let i = 0; i < w.length; i++) sum += Math.min(w[i], 50) * g[i];
-        const director = engine._director;
-        const moving = director && Math.abs(window.scrollY - director.y) > 2;
-        if (Math.abs(sum - lastSum) > 2 && !moving) {
-          lastSum = sum;
-          cool = 1.2;
-          try { capture(); } catch (err) { console.warn('[palace] environment capture failed', err); cool = 30; }
-        }
+        if (!state.ignited || fade >= 1 || !scene.environment) return;
+        if (wait > 0) { wait -= dt; return; }
+        fade = Math.min(1, fade + dt / 2);
+        const k = fade * fade * (3 - 2 * fade);
+        for (const [m, v] of fades) m.envMapIntensity = v * k;
+        envFade = k;
       },
     };
   })();
 
   progress('Lighting the first lamp…', 0.9);
+  // The stone textures are small; wait for them (briefly) so they don't
+  // arrive later and rebuild shaders while someone is watching.
+  if (upgraded) await Promise.race([upgraded, new Promise((r) => setTimeout(r, 6000))]);
+  env.prime();
+  try { await engine.warm(scene, camera); } catch (err) { console.warn('[palace] warm-up failed', err); }
   await tick();
   return {
     handle,

@@ -45,7 +45,8 @@ export class LampLights {
       const d = this.active[i];
       if (!d) { C[i].set(0, 0, 0); continue; }
       const lit = litAt(this.groupU, d.group, d.key);
-      const fl = 0.93 + 0.05 * Math.sin(t * 7.3 + d.seed) + 0.03 * Math.sin(t * 13.1 + d.seed * 2);
+      // many flames average out: walls get only a slow, gentle breathing
+      const fl = 0.98 + 0.015 * Math.sin(t * 2.3 + d.seed) + 0.008 * Math.sin(t * 3.7 + d.seed * 2);
       const k = d.intensity * lit * fl;
       P[i].copy(d.pos);
       C[i].set(d.color.r * k, d.color.g * k, d.color.b * k);

@@ -192,6 +192,12 @@ export async function createRiverScene({ engine, tier }) {
     return g;
   }
 
+  // A hidden spare boat, so its shaders are prepared with the rest of the
+  // river and releasing the very first wish doesn't stutter.
+  const spare = makeBoat();
+  spare.visible = false;
+  scene.add(spare);
+
   /** Add a wish diya. `fresh` animates it from the shore. */
   function addWish(w, { fresh = false } = {}) {
     if (!freeSlots.length) {

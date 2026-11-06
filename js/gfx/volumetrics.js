@@ -41,7 +41,7 @@ export function makeGlowMaterial(groupU, { intensity = 1 } = {}) {
       #include <fog_pars_fragment>
       ${NOISE}
       void main() {
-        float f = 0.82 + 0.18 * vnoise(vW.xy * 2.5 + vW.z + uTime * 1.3);
+        float f = 0.93 + 0.07 * vnoise(vW.xy * 2.5 + vW.z + uTime * 0.6);
         vec3 c = vColor * (vLit * uIntensity * f + 0.01);
         gl_FragColor = vec4(c, 1.0);
         #include <tonemapping_fragment>

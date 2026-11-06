@@ -137,19 +137,26 @@ export class Engine {
     this._last = 0;
     this._lastRender = 0;
     this.listeners = new Set();
+    this.beforeListeners = new Set();
     this.handles = new Set();
     this.composer = null;
     this.reduced = false;
 
     this.monitor = new AdaptiveMonitor({
-      onScale: (s) => { this.scale = s; this.resize(); },
+      onScale: (s) => { this.scale = s; this.resize(true); },
       onDegrade: () => onDegrade?.(),
     });
 
     this._tick = this._tick.bind(this);
+    // Measure the *large* viewport (100lvh): it does not change when a phone's
+    // address bar or keyboard appears, so scrolling never rebuilds the 3D view
+    // (a rebuild is what made the picture flash).
+    this._probe = document.createElement('div');
+    this._probe.setAttribute('aria-hidden', 'true');
+    this._probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100vh;height:100lvh;visibility:hidden;pointer-events:none';
+    document.body.append(this._probe);
     this._onResize = () => { cancelAnimationFrame(this._resizeRaf); this._resizeRaf = requestAnimationFrame(() => this.resize()); };
     window.addEventListener('resize', this._onResize);
-    window.visualViewport?.addEventListener('resize', this._onResize);
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.stop();
       else this.start();
@@ -161,7 +168,7 @@ export class Engine {
       onContextLost?.();
     });
     canvas.addEventListener('webglcontextrestored', () => {
-      this.resize();
+      this.resize(true);
       this.start();
       onContextRestored?.();
     });
@@ -276,7 +283,7 @@ export class Engine {
         composer.addPass(this.smaa);
       }
       this.composer = composer;
-      this.resize();
+      this.resize(true);
     } catch (err) {
       console.warn('[engine] post-processing unavailable, rendering directly', err);
       this.composer = null;
@@ -288,6 +295,45 @@ export class Engine {
     handle.camera.aspect = this.width / this.height;
     handle.camera.updateProjectionMatrix();
     handle.resize?.(this.width, this.height);
+  }
+
+  /**
+   * Prepare a scene before it is first seen: compile every shader (hidden
+   * objects too, like fireworks) and upload every texture, then draw it once
+   * off-screen. Without this the first frame that shows something new stalls
+   * for up to a second, which reads as a freeze in the middle of a scroll.
+   */
+  async warm(scene, camera, target = scene) {
+    const r = this.renderer;
+    const rt = this._warmRT || (this._warmRT = new THREE.WebGLRenderTarget(8, 8, { type: THREE.HalfFloatType }));
+    const prev = r.getRenderTarget();
+    // compile for an off-screen float target: the same shader variant the
+    // composer's scene pass uses
+    let ready = null;
+    r.setRenderTarget(rt);
+    try { ready = r.compileAsync(scene, camera, target); } catch (err) { console.warn('[engine] warm-up compile failed', err); }
+    r.setRenderTarget(prev);
+    await ready?.catch(() => {});
+    const seen = new Set();
+    scene.traverse((o) => {
+      for (const m of [].concat(o.material || [])) {
+        if (seen.has(m)) continue;
+        seen.add(m);
+        for (const v of Object.values(m)) if (v?.isTexture) r.initTexture(v);
+        for (const u of Object.values(m.uniforms || {})) if (u?.value?.isTexture) r.initTexture(u.value);
+      }
+    });
+    if (!scene.isScene) return;
+    // draw once with nothing culled, so things out of shot now (and the
+    // depth pre-pass versions of them) are ready too
+    const culled = [];
+    scene.traverse((o) => { if (o.frustumCulled) { culled.push(o); o.frustumCulled = false; } });
+    const now = r.getRenderTarget();
+    r.setRenderTarget(rt);
+    try { this.renderScene(scene, camera); } finally {
+      r.setRenderTarget(now);
+      for (const o of culled) o.frustumCulled = true;
+    }
   }
 
   /** Show a scene immediately. */
@@ -417,6 +463,12 @@ export class Engine {
     if (this.grade) this.grade.uniforms.uVignette.value = h.vignette ?? 0.55;
   }
 
+  /** Runs before scenes update (the scroll director sets cameras here). */
+  onBeforeFrame(fn) {
+    this.beforeListeners.add(fn);
+    return () => this.beforeListeners.delete(fn);
+  }
+
   onFrame(fn) {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -443,6 +495,7 @@ export class Engine {
     this.time += dt;
     this.frame++;
     try {
+      for (const fn of this.beforeListeners) fn(dt, this.time);
       this.active?.update(dt, this.time);
       if (this.incoming) this.incoming.update(dt, this.time);
       for (const fn of this.listeners) fn(dt, this.time);
@@ -463,9 +516,12 @@ export class Engine {
     }
   }
 
-  resize() {
-    const w = Math.max(1, Math.round(window.visualViewport?.width || window.innerWidth));
-    const h = Math.max(1, Math.round(window.visualViewport?.height || window.innerHeight));
+  resize(force = false) {
+    const w = Math.max(1, window.innerWidth);
+    const h = Math.max(1, Math.round(Math.max(this._probe?.offsetHeight || 0, window.innerHeight)));
+    if (!force && w === this.width && h === this.height && this._sizedScale === this.scale && this._sizedPR === this.basePR) return;
+    this._sizedScale = this.scale;
+    this._sizedPR = this.basePR;
     this.width = w;
     this.height = h;
     const pr = this.basePR * this.scale;

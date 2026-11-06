@@ -9,7 +9,7 @@
  */
 
 /* RELEASE:START */
-const VERSION = 'deepotsav-1.0.0-de8757685b';
+const VERSION = 'deepotsav-1.0.0-27c500f5a4';
 const PRECACHE = [
   './',
   './assets/fonts/cormorant-500-italic.woff2',

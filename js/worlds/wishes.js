@@ -91,15 +91,15 @@ export function createWishesWorld(ctx) {
     renderList();
     text.value = '';
     count.textContent = '0 / 160';
+    text.blur(); // closes the phone keyboard so the river can be seen
     ctx.audio.chime();
     ctx.announce('Your diya is floating out across the water with your wish.');
     if (ctx.gl && river) {
       const item = river.addWish(w, { fresh: true });
-      floatWords(value, item);
-      // follow the diya out onto the water for a few seconds
-      ctx.director.hold('river', 'release', 7);
+      releaseMoment(item, value);
     } else {
       ctx.fallback.addWish(w, true);
+      releaseMoment(null, value);
     }
     if (WISH_ENDPOINT && consent.checked) {
       consent.checked = false;
@@ -111,6 +111,51 @@ export function createWishesWorld(ctx) {
       }
     }
   });
+
+  // --- the release moment ------------------------------------------------------
+  // The card steps aside, the camera follows the leaf-boat diya as it floats
+  // out, the wish rises above it, and then the card returns with a note.
+  const card = el.querySelector('.card');
+  const done = document.getElementById('wish-done');
+  let caption = null;
+  let releasing = null;
+
+  function releaseMoment(item, value) {
+    endRelease(true);
+    const seconds = ctx.reduced ? 4 : 9;
+    card.classList.add('is-releasing');
+    done.hidden = true;
+    caption = document.createElement('p');
+    caption.className = 'release-caption';
+    caption.textContent = 'Your diya is setting out across the water…';
+    document.body.append(caption);
+    if (item) {
+      floatWords(value, item);
+      ctx.director.hold('river', () => {
+        const p = item.mesh.position;
+        return { pos: [p.x + 0.45, 1.05, p.z + 2.9], target: [p.x, 0.15, p.z - 0.6], fov: 44, focus: 3 };
+      }, seconds + 1.2);
+    }
+    const startY = window.scrollY;
+    const onScroll = () => { if (Math.abs(window.scrollY - startY) > 60) endRelease(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    releasing = { timer: setTimeout(() => endRelease(), seconds * 1000), onScroll };
+  }
+
+  function endRelease(silent = false) {
+    if (!releasing) return;
+    clearTimeout(releasing.timer);
+    window.removeEventListener('scroll', releasing.onScroll);
+    releasing = null;
+    ctx.director.cancelHold();
+    caption?.remove();
+    caption = null;
+    card.classList.remove('is-releasing');
+    if (!silent) {
+      done.hidden = false;
+      done.focus({ preventScroll: true });
+    }
+  }
 
   function floatWords(value, item) {
     const span = document.createElement('span');
@@ -126,8 +171,8 @@ export function createWishesWorld(ctx) {
       const f = floating[i];
       const age = (now - f.born) / 1000;
       const p = river?.projectWish(f.item);
-      if (age > 7 || !p || ctx.director.group !== 'wishes') { f.span.remove(); floating.splice(i, 1); continue; }
-      const a = age < 0.6 ? age / 0.6 : Math.max(0, 1 - (age - 4) / 3);
+      if (age > 9 || !p || ctx.director.group !== 'wishes') { f.span.remove(); floating.splice(i, 1); continue; }
+      const a = age < 0.8 ? age / 0.8 : Math.max(0, 1 - (age - 6) / 3);
       f.span.style.opacity = a.toFixed(3);
       f.span.style.transform = `translate(-50%, -100%) translate3d(${p.x.toFixed(1)}px, ${(p.y - age * 10).toFixed(1)}px, 0)`;
     }
@@ -174,6 +219,7 @@ export function createWishesWorld(ctx) {
       renderList();
     },
     exit() {
+      endRelease(true);
       unsubscribe?.();
       unsubscribe = null;
       for (const f of floating) f.span.remove();

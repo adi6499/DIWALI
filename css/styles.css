@@ -362,6 +362,19 @@ html.js.studio-open { overflow: hidden; scroll-snap-type: none; }
 .wish-list li .fine { display: block; }
 .wish-list .icon-btn { width: 36px; height: 36px; flex: none; }
 .float-words { position: fixed; inset: 0; pointer-events: none; z-index: 8; }
+.js .card.is-releasing { opacity: 0; transform: translateY(32px); pointer-events: none; transition-duration: 0.8s; }
+.release-caption {
+  /* centred with margins, not a transform, so the fade-up animation can't shift it */
+  position: fixed; left: 0; right: 0; margin: 0 auto !important; top: calc(var(--topbar-h) + 18px + var(--safe-t)); z-index: 12;
+  margin: 0; padding: 8px 18px; border-radius: 999px; background: rgba(5, 7, 26, 0.7); border: 1px solid var(--line);
+  color: var(--gold-200); font-size: 15px; letter-spacing: 0.02em; text-align: center; width: fit-content; max-width: calc(100% - 32px); pointer-events: none;
+  animation: fade-up 0.6s var(--ease) both;
+}
+.wish-done {
+  display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 4px; padding: 10px 12px; border-radius: 12px;
+  background: rgba(214, 174, 94, 0.12); border: 1px solid var(--line-strong); color: var(--ivory); font-size: 14.5px; outline: none;
+}
+.wish-done .icon { width: 18px; height: 18px; color: var(--gold-300); flex: none; margin-top: 2px; }
 .float-word {
   position: absolute; left: 0; top: 0; max-width: min(80vw, 420px); transform: translate(-50%, -100%);
   font-family: var(--font-display); font-style: italic; font-size: clamp(19px, 4.8vw, 26px); color: var(--ivory);

@@ -149,9 +149,18 @@ export class ScrollDirector {
     }
   }
 
-  /** Briefly steer the camera to a shot (e.g. following a released wish). */
+  /**
+   * Briefly steer the camera to a shot, e.g. following a released wish. `shot`
+   * is a shot name or a function returning a shot each frame (a follow-cam).
+   * While held, the picture is not shifted for the card.
+   */
   hold(scene, shot, seconds = 5) {
-    this.holdState = { scene, shot, t: 0, dur: seconds };
+    this.holdState = { scene, shot, t: 0, dur: seconds, w: 0 };
+  }
+
+  cancelHold() {
+    const hs = this.holdState;
+    if (hs && hs.t < hs.dur - 1.6) hs.t = hs.dur - 1.6; // ease out instead of snapping
   }
 
   update(dt) {
@@ -248,23 +257,28 @@ export class ScrollDirector {
     }
     // temporary hold (e.g. watching a wish float away)
     const hs = this.holdState;
+    let held = 0;
+    let focus = s.focus;
     if (hs) {
       const shots = this._shots(hs.scene);
-      const sh = shots?.[hs.shot];
+      const sh = typeof hs.shot === 'function' ? hs.shot() : shots?.[hs.shot];
       const sameRig = (hs.scene === 'river' ? this.ctx.river?.rig : this.ctx.palace.rig) === rig;
       if (sh && sameRig) {
         hs.t += dt;
-        const w = smoother(clamp01(hs.t / 1.2)) * smoother(clamp01((hs.dur - hs.t) / 1.6));
+        const w = smoother(clamp01(hs.t / 1.4)) * smoother(clamp01((hs.dur - hs.t) / 1.6));
+        hs.w = w;
+        held = w;
         pos = pos.clone().lerp(_p0.fromArray(sh.pos), w);
         target = target.clone().lerp(_t0.fromArray(sh.target), w);
         fov = lerp(fov, sh.fov ?? fov, w);
+        if (sh.focus) focus = lerp(focus, sh.focus, w);
         if (hs.t >= hs.dur) this.holdState = null;
       }
     }
-    rig.setDirect({ pos, target, fov, fit: s.fit, focus: s.focus, aperture: s.aperture });
+    rig.setDirect({ pos, target, fov, fit: s.fit, focus, aperture: s.aperture });
     const [ax, ay] = this.ctx.shiftFor(A.shift);
     const [bx, by] = this.ctx.shiftFor(B.shift);
-    rig.setShift(lerp(ax, bx, e), lerp(ay, by, e));
+    rig.setShift(lerp(ax, bx, e) * (1 - held), lerp(ay, by, e) * (1 - held));
   }
 
   /** Lamps along the pool and the palace light as you scroll through the story. */

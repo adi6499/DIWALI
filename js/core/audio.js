@@ -1,20 +1,18 @@
 // Sound design: everything is synthesised in the browser, but from physical
 // models rather than raw oscillators:
 //
-//  • Tanpura: Karplus–Strong plucked strings with a soft "jawari" buzz,
-//    tuned Pa–Sa–Sa–low Sa and played in the classic slow cycle.
-//  • Santoor: hammered strings (two detuned courses) playing slow phrases in
+//  • Santoor: hammered strings (two detuned courses) playing short phrases in
 //    Raga Yaman, an evening raga.
 //  • Temple bells: modal synthesis with beating partial pairs, rendered once
 //    with an OfflineAudioContext.
-//  • Night: crickets, the hush of a far-off ladi of crackers, river water.
 //  • Effects: match strike, flame, fireworks (whistle, boom, crackle).
 //  • A synthetic courtyard reverb glues it together.
 //
-// Nothing plays and no AudioContext exists until the visitor turns sound on.
+// There is no background loop: a sound only plays when the visitor does
+// something (lights a diya, launches a firework, sends a wish…). Nothing plays
+// and no AudioContext exists until the visitor turns sound on.
 
-const SA3 = 138.59; // C#3, a common tanpura tuning
-const SA4 = SA3 * 2;
+const SA4 = 277.18; // C#4, Sa of the santoor phrases
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -74,9 +72,7 @@ export class AudioEngine {
     this.ctx = null;
     this.enabled = false;
     this.volume = 0.7;
-    this.scene = 'palace';
     this.voices = 0;
-    this._timers = [];
     this._ready = null;
     this.buffers = {};
   }
@@ -99,15 +95,15 @@ export class AudioEngine {
     const t = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(t);
     this.master.gain.setValueAtTime(this.master.gain.value, t);
-    this.master.gain.linearRampToValueAtTime(this.volume, t + 2.5);
+    this.master.gain.linearRampToValueAtTime(this.volume, t + 0.15);
     if (!this._ready) this._ready = this._prepare();
-    this._ready.then(() => { if (this.enabled) this._startAmbience(); });
+    // one soft ghanti, so the visitor hears that sound is on
+    this._ready.then(() => { if (this.enabled) this.bell({ which: 'ghanti', gain: 0.08 }); });
     return true;
   }
 
   disable() {
     this.enabled = false;
-    this._stopAmbience();
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(t);
@@ -127,24 +123,10 @@ export class AudioEngine {
     else if (this.enabled) this.ctx.resume().catch(() => {});
   }
 
-  /** 'palace' | 'river' | 'fireworks'. Crossfades the beds. */
-  setScene(name) {
-    this.scene = name;
-    if (!this.ctx) return;
-    const t = this.ctx.currentTime;
-    const river = name === 'river';
-    const fw = name === 'fireworks';
-    this.waterBus.gain.setTargetAtTime(river ? 0.5 : 0, t, 1.2);
-    this.droneBus.gain.setTargetAtTime(fw ? 0.35 : 0.8, t, 1.2);
-    this.melodyBus.gain.setTargetAtTime(fw ? 0.0 : 0.85, t, 1.5);
-    this.nightBus.gain.setTargetAtTime(fw ? 0.15 : river ? 0.7 : 0.55, t, 1.5);
-  }
-
   // --- graph -----------------------------------------------------------------------
   _build() {
     const AC = window.AudioContext || window.webkitAudioContext;
     const ctx = (this.ctx = new AC({ latencyHint: 'playback' }));
-    const sr = ctx.sampleRate;
 
     this.master = ctx.createGain();
     this.master.gain.value = 0;
@@ -177,47 +159,10 @@ export class AudioEngine {
       }
       return g;
     };
-    // Tanpura bus with a little presence for the jawari shimmer
-    this.droneBus = ctx.createGain();
-    this.droneBus.gain.value = 0.8;
-    const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 45;
-    const presence = ctx.createBiquadFilter();
-    presence.type = 'peaking';
-    presence.frequency.value = 2400;
-    presence.Q.value = 0.9;
-    presence.gain.value = 3;
-    const droneOut = bus(1, 0.35);
-    this.droneBus.connect(hp).connect(presence).connect(droneOut);
-
     this.melodyBus = bus(0.85, 0.6);
     this.fxBus = bus(0.9, 0.4);
-    this.nightBus = bus(0.55, 0.3);
-    this.waterBus = bus(0, 0.15);
 
     this.noise = this._noiseBuffer(2);
-
-    // River water: brown noise shaped into slow laps
-    const water = ctx.createBufferSource();
-    water.buffer = this._brownBuffer(8);
-    water.loop = true;
-    const wf = ctx.createBiquadFilter();
-    wf.type = 'lowpass';
-    wf.frequency.value = 650;
-    const lapGain = ctx.createGain();
-    lapGain.gain.value = 0.25;
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.21;
-    const lfoAmt = ctx.createGain();
-    lfoAmt.gain.value = 0.12;
-    lfo.connect(lfoAmt).connect(lapGain.gain);
-    water.connect(wf).connect(lapGain).connect(this.waterBus);
-    water.start();
-    lfo.start();
-
-    this.setScene(this.scene);
-    void sr;
   }
 
   /** Builds the instrument samples once, yielding so the page never stutters. */
@@ -228,14 +173,6 @@ export class AudioEngine {
       b.copyToChannel(r.data, 0);
       return { buffer: b, freq: r.freq };
     };
-    // Tanpura strings: Pa (below Sa), Sa, Sa, low Sa
-    const tanpura = [];
-    const strings = [[SA3 * 0.7492, 11], [SA3, 23], [SA3 * 1.0008, 37], [SA3 / 2, 51]];
-    for (const [f, seed] of strings) {
-      tanpura.push({ ...mk(pluckString(sr, f, 7.5, { feedback: 0.9993, bright: 0.93, brightEnd: 0.68, brightTime: 2.2, buzz: 0.18, pick: 0.13, seed })), target: f });
-      await yieldFrame();
-    }
-    this.buffers.tanpura = tanpura;
     // Santoor: three reference pitches, shifted by playbackRate for the rest
     const santoor = [];
     for (const [semi, seed] of [[0, 3], [7, 5], [12, 7]]) {
@@ -244,8 +181,6 @@ export class AudioEngine {
       await yieldFrame();
     }
     this.buffers.santoor = santoor;
-    this.buffers.crickets = this._cricketBuffer(3.2);
-    await yieldFrame();
     try {
       this.buffers.templeBell = await this._renderBell(392, 7, 1);
       this.buffers.ghanti = await this._renderBell(1180, 3.5, 2);
@@ -259,23 +194,6 @@ export class AudioEngine {
     const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    return buf;
-  }
-
-  _brownBuffer(seconds) {
-    const ctx = this.ctx;
-    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < d.length; i++) {
-      last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
-      d[i] = last * 3.2;
-    }
-    const fade = 4000;
-    for (let i = 0; i < fade; i++) {
-      const a = i / fade;
-      d[i] = d[i] * a + d[d.length - fade + i] * (1 - a);
-    }
     return buf;
   }
 
@@ -296,26 +214,6 @@ export class AudioEngine {
         const coef = 0.6 - 0.5 * Math.min(1, t / seconds);
         lp += ((rnd() * 2 - 1) - lp) * coef;
         d[i] += lp * Math.exp(-t * 2.6) * 0.5 * Math.min(1, t / 0.04);
-      }
-    }
-    return buf;
-  }
-
-  _cricketBuffer(seconds) {
-    const ctx = this.ctx;
-    const sr = ctx.sampleRate;
-    const buf = ctx.createBuffer(1, Math.floor(sr * seconds), sr);
-    const d = buf.getChannelData(0);
-    const rnd = mulberry32(9);
-    for (let t = 0.05; t < seconds - 0.15; t += 0.55 + rnd() * 0.12) {
-      const amp = 0.4 + rnd() * 0.6;
-      for (let p = 0; p < 3; p++) {
-        const start = Math.floor((t + p * 0.027) * sr);
-        const n = Math.floor(0.015 * sr);
-        for (let i = 0; i < n; i++) {
-          const env = Math.sin((Math.PI * i) / n) ** 2;
-          d[start + i] += Math.sin((2 * Math.PI * 4650 * i) / sr) * env * amp * 0.5;
-        }
       }
     }
     return buf;
@@ -405,75 +303,7 @@ export class AudioEngine {
     return true;
   }
 
-  // --- ambience ----------------------------------------------------------------------
-  _startAmbience() {
-    this._stopAmbience();
-    const ctx = this.ctx;
-    let next = ctx.currentTime + 0.3;
-    // Tanpura: Pa – Sa – Sa – low Sa, each string left ringing into the next
-    const tanpura = () => {
-      if (!this.enabled) return;
-      const now = this.ctx.currentTime;
-      if (next < now) next = now + 0.1;
-      while (next < now + 2) {
-        const strings = this.buffers.tanpura;
-        const gaps = [1.05, 1.0, 1.1, 1.45];
-        let t = next;
-        strings.forEach((s, i) => {
-          const human = (Math.random() - 0.5) * 0.04;
-          this._play(s.buffer, { bus: this.droneBus, at: t + human, rate: s.target / s.freq, gain: (i === 3 ? 0.42 : 0.3) * (0.85 + Math.random() * 0.15), pan: [-0.25, -0.08, 0.08, 0.2][i] });
-          t += gaps[i];
-        });
-        next = t;
-      }
-      this._timers.push(setTimeout(tanpura, 700));
-    };
-    tanpura();
-
-    // Santoor phrases in Raga Yaman
-    const melody = () => {
-      if (!this.enabled) return;
-      if (this.scene !== 'fireworks') this.phrase();
-      this._timers.push(setTimeout(melody, 11000 + Math.random() * 7000));
-    };
-    this._timers.push(setTimeout(melody, 4500));
-
-    // Crickets: two, slightly different, left and right
-    for (const [rate, pan] of [[0.96, -0.55], [1.05, 0.5]]) {
-      const src = ctx.createBufferSource();
-      src.buffer = this.buffers.crickets;
-      src.loop = true;
-      src.playbackRate.value = rate;
-      const g = ctx.createGain();
-      g.gain.value = 0.05;
-      const p = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
-      if (p.pan) p.pan.value = pan;
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 6000;
-      src.connect(lp).connect(g).connect(p).connect(this.nightBus);
-      src.start(ctx.currentTime + Math.random(), Math.random() * 2);
-      this._loops = [...(this._loops || []), src];
-    }
-
-    // A far-off ladi of crackers now and then, and a temple ghanti
-    const distant = () => {
-      if (!this.enabled) return;
-      if (this.scene !== 'fireworks') {
-        if (Math.random() < 0.6) this.distantLadi(); else this.bell({ which: 'ghanti', gain: 0.07, pitch: 0.92 + Math.random() * 0.16, pan: (Math.random() - 0.5) * 1.2 });
-      }
-      this._timers.push(setTimeout(distant, 9000 + Math.random() * 12000));
-    };
-    this._timers.push(setTimeout(distant, 7000));
-  }
-
-  _stopAmbience() {
-    this._timers.forEach(clearTimeout);
-    this._timers.length = 0;
-    for (const s of this._loops || []) { try { s.stop(); } catch { /* already stopped */ } }
-    this._loops = [];
-  }
-
+  // --- melody ------------------------------------------------------------------------
   /** A short alaap-like phrase on santoor, in Yaman (S R G M# P D N). */
   phrase(kind = null) {
     if (!this.enabled || !this.buffers.santoor) return;
@@ -514,29 +344,6 @@ export class AudioEngine {
     const buf = which === 'temple' ? this.buffers.templeBell : this.buffers.ghanti;
     if (!buf) return;
     this._play(buf, { bus: this.fxBus, rate: pitch, gain, pan });
-  }
-
-  distantLadi() {
-    if (!this.enabled || !this._voice(2)) return;
-    const ctx = this.ctx;
-    const pan = (Math.random() - 0.5) * 1.4;
-    const p = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
-    if (p.pan) p.pan.value = pan;
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 700;
-    lp.connect(p).connect(this.nightBus);
-    const count = 3 + Math.floor(Math.random() * 9);
-    let t = ctx.currentTime + 0.05;
-    for (let i = 0; i < count; i++) {
-      const n = this._noiseSource(t, 0.05);
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.18 + Math.random() * 0.12, t + 0.003);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-      n.connect(g).connect(lp);
-      t += 0.05 + Math.random() * 0.09;
-    }
   }
 
   ignite() {

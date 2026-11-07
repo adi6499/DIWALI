@@ -273,8 +273,6 @@ export class ScrollDirector {
       if (engine.composer == null && !reduced) curtain = Math.max(curtain, 1 - Math.abs(t * 2 - 1));
     }
     engine.setCurtain(curtain);
-    const audioScene = this.sections[Math.round(f)].scene === 'river' ? 'river' : this.group === 'fireworks' ? 'fireworks' : 'palace';
-    if (audioScene !== this._audioScene) { this._audioScene = audioScene; ctx.audio.setScene(audioScene); }
   }
 
   _apply(rig, s, dt, A, B, e) {

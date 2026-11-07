@@ -235,7 +235,7 @@
   "loader.wick": "Twisting the wick…",
   "loader.lamp": "Lighting the first lamp…",
   "loader.error": "Something went wrong. Please reload the page.",
-  "sound.on": "Sound on: tanpura, santoor and temple bells.",
+  "sound.on": "Sound on.",
   "sound.off": "Sound off.",
   "sound.fail": "Sound could not start on this device.",
   "sound.turnOn": "Turn sound on",

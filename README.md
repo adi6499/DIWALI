@@ -184,12 +184,10 @@ Key techniques:
 - **Audio is opt-in**: nothing plays, and no AudioContext exists, until you
   press the speaker button or “Play with sound”.
 - **Sound design.** Everything is synthesised from physical models, so there
-  are no audio files:
-  - a Karplus–Strong tanpura (Pa–Sa–Sa–low Sa, with a soft jawari buzz);
-  - santoor phrases in Raga Yaman;
+  are no audio files. There is no background loop: a sound plays only when you
+  do something.
+  - santoor phrases in Raga Yaman (lighting the diya, sending a wish);
   - temple bells from modal synthesis;
-  - crickets and a far-off ladi of crackers;
-  - river water;
   - fireworks;
   - a courtyard reverb.
 
@@ -237,7 +235,7 @@ confirmed from a panchang.
 - [x] Ocean of floating diyas: thousands of instanced lamps, private wishes, tap to read, share sheet only on your request
 - [x] Interactive fireworks: 7 shells, anar, chakri, sparkler, finale, water reflections, synthesised sound
 - [x] Greeting editor: 13 languages and scripts (incl. Happy Dhanteras), 4 styles, 3 accents, download, native share, personal link
-- [x] Opt-in Web Audio from physical models: plucked tanpura, santoor in Raga Yaman, temple bells, crickets, distant crackers, water, fireworks
+- [x] Opt-in Web Audio from physical models, played only on your actions: santoor in Raga Yaman, temple bells, fireworks
 - [x] PWA: manifest, icons (incl. maskable), service worker precache, offline page, install button, update prompt
 - [x] Quality tiers, adaptive resolution, visibility pause, lazy loading, reduced motion, 2D fallback, context-loss handling
 - [x] Responsive from 320px, touch-first, keyboard and screen-reader friendly
